@@ -4,6 +4,18 @@
 
 Verification date: 2026-11-26
 
+## Candidate 0.1.1 verification
+
+The test ran in an actually running Gothic II 2.6 (fix) game with Union 1.0M. The candidate DLL was copied only into `build/testbed/System/Autorun`; the previous library was preserved in the local `_rollback` directory. The plugin reported `plugin_version: 0.1.1`, `protocol_version: 1`, and `world_ready: true`.
+
+Regression checks passed for `ping`, `vob` on `PC_HERO`, `raycast`, `camera_get`, `camera_restore` with no active override, and a 3×3 `surface_grid` (9 results). The testbed was returned to its default configuration, with `allow_camera_control` and `allow_scenario_start` disabled.
+
+Daedalus symbol checks used existing game symbols plus one test symbol added only to the testbed. The scalar integer constant `TRUE` was read successfully by `scenario_status` (value 1). Using `TRUE` as the queue returned `configured_symbol_not_writable`. The instance symbol `PC_HERO` was rejected for both status and queue with `configured_symbol_type_mismatch`, before its value was read or written. The test symbol `DEVBRIDGE_TEST_REQUEST` first returned 0, changed to 123 after `scenario_start`, and was read back by `scenario_status`. This one-line fixture remains only in `build/testbed/System/Autorun/DevBridgeTestSymbols.d`; it is not part of the repository or release package.
+
+SHA-256 of the tested Windows x86 DLL:
+
+`C4E8213AE394352550FF31709A83E6FEA8FC6118CCDA7435554BE47AB552644A`
+
 ## Local boundary
 
 The Gothic II runtime copy is under `build/testbed` and is excluded by the repository-root `/build/` ignore rule. Game files remain local and are not part of the public source or release package.

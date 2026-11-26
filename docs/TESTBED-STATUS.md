@@ -4,6 +4,18 @@
 
 Data weryfikacji: 2026-11-26
 
+## Weryfikacja kandydata 0.1.1
+
+Test wykonano w rzeczywiście uruchomionym Gothic II 2.6 (fix) z Union 1.0M. DLL kandydata skopiowano wyłącznie do `build/testbed/System/Autorun`; poprzednią bibliotekę zachowano w lokalnym katalogu `_rollback`. Plugin zgłosił `plugin_version: 0.1.1`, `protocol_version: 1` i `world_ready: true`.
+
+Testy regresji zakończyły się powodzeniem dla `ping`, `vob` na `PC_HERO`, `raycast`, `camera_get`, `camera_restore` bez aktywnego nadpisania oraz `surface_grid` z siatką 3×3 (9 wyników). Przywrócono domyślną konfigurację testbedu, w której `allow_camera_control` i `allow_scenario_start` pozostają wyłączone.
+
+Weryfikacja symboli Daedalusa użyła istniejących symboli gry oraz jednego testowego symbolu dodanego wyłącznie w testbedzie. Skalarna stała całkowitoliczbowa `TRUE` została poprawnie odczytana przez `scenario_status` (wartość 1). Użycie `TRUE` jako kolejki zakończyło się `configured_symbol_not_writable`. Symbol instancji `PC_HERO` został odrzucony zarówno dla statusu, jak i kolejki kodem `configured_symbol_type_mismatch`, przed odczytem lub zapisem wartości. Testowy symbol `DEVBRIDGE_TEST_REQUEST` zwrócił początkowo 0, po `scenario_start` przyjął wartość 123, a `scenario_status` potwierdził ten zapis. Jednowierszowy fixture znajduje się wyłącznie w `build/testbed/System/Autorun/DevBridgeTestSymbols.d`; nie jest częścią repozytorium ani paczki wydania.
+
+SHA-256 przetestowanej DLL Windows x86:
+
+`C4E8213AE394352550FF31709A83E6FEA8FC6118CCDA7435554BE47AB552644A`
+
 ## Zakres lokalny
 
 Kopia uruchomieniowa Gothic II znajduje się w `build/testbed` i jest wykluczona z repozytorium regułą `/build/` w katalogu głównym. Pliki gry pozostają lokalnie i nie są częścią publicznych źródeł ani paczki wydania.

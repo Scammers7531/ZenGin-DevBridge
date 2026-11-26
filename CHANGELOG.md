@@ -2,13 +2,15 @@
 
 # Dziennik zmian
 
-## Kandydat 0.1.1 — 2026-11-26 (nieopublikowany)
+## 0.1.1 — 2026-11-26 (pakiet zweryfikowany, nieopublikowany)
 
 - Rozdzielono wymagania uruchamiania gotowej DLL i kompilacji ze źródeł; dodano bezpośredni odnośnik do wydania oraz praktyczne zastosowania pluginu.
 - Uzupełniono dokumentację protokołu o wszystkie kody błędów, odrzucenia bez `response.json`, terminy, anulowanie, przywracanie kamery, ponawianie scenariuszy i wczytywanie konfiguracji.
 - Zabezpieczono `client.lock`, aby klient, który nie uzyskał blokady, nie usuwał pliku należącego do innego procesu.
 - Dodano sprawdzanie, czy skonfigurowane symbole Daedalusa są zmiennymi całkowitoliczbowymi o jednym elemencie, a symbol kolejki nie jest stałą.
 - Dodano regresyjny test współbieżnych klientów; tag i wydanie `v0.1.0` pozostają bez zmian.
+- Zweryfikowano DLL w działającym Gothic II 2.6 (fix) z Union 1.0M: `ping`, `vob`, `raycast`, `surface_grid`, `camera_get` i bezpieczne `camera_restore`; protokół pozostaje w wersji 1.
+- Testy parsera Daedalusa potwierdziły odczyt skalarnego `int`, poprawny zapis i ponowny odczyt testowej kolejki oraz odrzucenie stałej i symbolu instancji przez właściwe kody błędów.
 - SHA-256 lokalnej kompilacji kandydackiej Windows x86: `C4E8213AE394352550FF31709A83E6FEA8FC6118CCDA7435554BE47AB552644A`.
 
 ## Aktualizacja dokumentacji — 2026-11-26

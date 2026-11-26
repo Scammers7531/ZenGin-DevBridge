@@ -4,7 +4,7 @@
 
 ZenGin DevBridge to lokalny plugin diagnostyczny oparty na wymianie plików dla **Gothic II: Noc Kruka (x86)**. Umożliwia lokalnym skryptom i agentom AI odczytywanie stanu załadowanego świata przez Union API, bez uruchamiania serwera sieciowego.
 
-Wersja `0.1.0` jest publicznym wydaniem preview do testowania z Gothic II: Noc Kruka. Możesz użyć gotowej biblioteki DLL albo skompilować projekt ze źródeł; wymagania tych dwóch sposobów są opisane osobno poniżej. Plugin działa wewnątrz aktywnego procesu gry.
+Wersja `0.1.1` została przygotowana i zweryfikowana w izolowanym testbedzie Gothic II: Noc Kruka 2.6 (fix) z Union 1.0M. Pakiet nie jest jeszcze opublikowany; najnowszym publicznym wydaniem pozostaje `0.1.0`. Możesz użyć gotowej biblioteki DLL albo skompilować projekt ze źródeł; wymagania tych dwóch sposobów są opisane osobno poniżej. Plugin działa wewnątrz aktywnego procesu gry.
 
 **Gotowe wydanie:** [Pobierz paczkę ZenGinDevBridge-0.1.0-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) · [opis wydania i sumy SHA-256](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0). Do użycia DLL nie są potrzebne narzędzia programistyczne.
 
