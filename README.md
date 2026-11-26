@@ -1,42 +1,42 @@
-[English](README.md) | [Polski](README.pl.md)
+[🇵🇱 Polski](README.md) | [🇬🇧 English](README.en.md)
 
 # ZenGin DevBridge
 
-ZenGin DevBridge is a local file based diagnostic plugin for **Gothic II: Night of the Raven (x86)**. It lets a local script or AI agent inspect the loaded world through the Union API without adding a network listener.
+ZenGin DevBridge to lokalny plugin diagnostyczny oparty na wymianie plików dla **Gothic II: Noc Kruka (x86)**. Umożliwia lokalnym skryptom i agentom AI odczytywanie stanu załadowanego świata przez Union API, bez uruchamiania serwera sieciowego.
 
-Version `0.1.0` is a public preview. It is intended for modders who can build and test a Union plugin and understand that the game is a live process.
+Wersja `0.1.0` jest publicznym wydaniem preview. Jest przeznaczona dla modderów, którzy potrafią kompilować i testować pluginy Union oraz rozumieją, że gra jest działającym procesem.
 
-## Included tools
+## Dostępne narzędzia
 
-- Read a VOb's class, transform, bounds, and collision flags.
-- Trace a ray or a bounded batch of rays.
-- Sample a bounded X/Z `surface_grid`, including static-world, dynamic-VOb, bounding-box, and player floor/water/ceiling comparisons.
-- Read camera transforms and AI flags.
-- Optionally set and restore the camera. Camera changes are disabled by default.
-- Optionally dispatch and read configured Daedalus integer symbols. Scenario dispatch is disabled by default and has no built-in scenario names.
-- Read protocol version and command capabilities with `ping`.
+- Odczyt klasy VOba, transformacji, granic przestrzennych i flag kolizji.
+- Wykonywanie pojedynczego raycastu lub ograniczonej liczby raycastów w jednej serii.
+- Próbkowanie ograniczonej siatki X/Z `surface_grid`, z porównaniem trafień w świat statyczny, dynamiczne VOby i bounding boxy oraz odczytami podłoża, wody i sufitu dla gracza.
+- Odczyt transformacji kamery oraz jej flag AI.
+- Opcjonalne ustawianie i przywracanie kamery. Zmiany kamery są domyślnie wyłączone.
+- Opcjonalne wysyłanie żądań i odczyt skonfigurowanych symboli całkowitoliczbowych Daedalusa. Obsługa scenariuszy jest domyślnie wyłączona i nie zawiera wbudowanych nazw scen.
+- Odczyt wersji protokołu i możliwości komend za pomocą `ping`.
 
-Read-only commands are available by default. `camera_set` and `scenario_start` change game state and require local opt-in. `camera_restore` remains available to clear a DevBridge camera override.
+Domyślnie dostępne są komendy tylko do odczytu. `camera_set` i `scenario_start` zmieniają stan gry i wymagają lokalnego włączenia. `camera_restore` jest zawsze dostępne, aby usunąć nadpisanie kamery ustawione przez DevBridge.
 
-## Requirements
+## Wymagania
 
-- Windows 10 or later.
-- Gothic II: Night of the Raven, x86, with a compatible Union installation.
-- Visual Studio 2022 C++ x86 build tools and a Windows 10 SDK.
-- CMake 3.24 or newer, Ninja, and Git.
+- Windows 10 lub nowszy.
+- Gothic II: Noc Kruka w wersji x86 z kompatybilną instalacją Union.
+- Visual Studio 2022 C++ x86 Build Tools i Windows 10 SDK.
+- CMake 3.24 lub nowszy, Ninja i Git.
 
-The project builds against the pinned Union API and Gothic API submodules. It does not include private project content or game assets.
+Projekt kompiluje się z przypiętymi podmodułami Union API i Gothic API. Nie zawiera prywatnych materiałów projektowych ani zasobów gry.
 
-## Build
+## Kompilacja
 
-Clone with all source dependencies:
+Sklonuj repozytorium wraz ze wszystkimi zależnościami źródłowymi:
 
 ```powershell
 git clone --recurse-submodules https://github.com/Scammers7531/ZenGin-DevBridge.git
 cd ZenGin-DevBridge
 ```
 
-The build script takes paths to the local compiler toolchain, CMake, Ninja, and Windows SDK. Typical Visual Studio installations place the SDK separately from the compiler:
+Skrypt kompilacji przyjmuje ścieżki do lokalnego toolchainu kompilatora, CMake, Ninja i Windows SDK. W typowej instalacji Visual Studio SDK znajduje się poza katalogiem kompilatora:
 
 ```powershell
 .\scripts\build.ps1 `
@@ -46,27 +46,27 @@ The build script takes paths to the local compiler toolchain, CMake, Ninja, and 
   -NinjaPath 'C:\Program Files\CMake\bin\ninja.exe'
 ```
 
-The resulting DLL is `build\g2a-release\ZenGinDevBridge.dll`. The script does not install or deploy the plugin.
+Wynikowa biblioteka DLL znajduje się w `build\g2a-release\ZenGinDevBridge.dll`. Skrypt jej nie instaluje ani nie wdraża do gry.
 
-## Install
+## Instalacja
 
-1. Back up the target game's existing Union configuration and close the game.
-2. Copy `ZenGinDevBridge.dll` into `<game-root>\System\Autorun\`.
-3. Start Gothic II: Night of the Raven. The plugin creates `<game-root>\ZenGinDevBridge\` when its render hook runs.
-4. Run the PowerShell client from this repository, supplying the game path:
+1. Wykonaj kopię zapasową obecnej konfiguracji Union w docelowej instalacji gry i zamknij grę.
+2. Skopiuj `ZenGinDevBridge.dll` do `<game-root>\System\Autorun\`.
+3. Uruchom Gothic II: Noc Kruka. Gdy wykona się hook renderujący, plugin utworzy katalog `<game-root>\ZenGinDevBridge\`.
+4. Uruchom klienta PowerShell z tego repozytorium, podając ścieżkę do gry:
 
    ```powershell
    .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II'
    .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II' -Command ping
    ```
 
-   Alternatively, use `-ExchangeDirectory` to point the client at an existing exchange folder.
+   Możesz też użyć parametru `-ExchangeDirectory`, aby wskazać istniejący katalog wymiany.
 
-The plugin and client exchange UTF-8 JSON files locally. The plugin does not start a server or send telemetry. Keep the exchange folder writable by the game process.
+Plugin i klient wymieniają lokalnie pliki JSON w kodowaniu UTF-8. Plugin nie uruchamia serwera ani nie wysyła telemetrii. Katalog wymiany musi być zapisywalny przez proces gry.
 
-## Local configuration
+## Konfiguracja lokalna
 
-Place `ZenGinDevBridge.config.json` in the game root, next to the `System` folder. No configuration is required for read-only tools.
+Umieść plik `ZenGinDevBridge.config.json` w katalogu głównym gry, obok folderu `System`. Narzędzia tylko do odczytu nie wymagają konfiguracji.
 
 ```json
 {
@@ -77,11 +77,11 @@ Place `ZenGinDevBridge.config.json` in the game root, next to the `System` folde
 }
 ```
 
-Set `allow_camera_control` to `true` only when you want to permit `camera_set`. Camera restore is always accepted. Scenario dispatch additionally needs a local `scenario_dispatch` mapping; see [the API and configuration reference](docs/API.md#local-configuration). Keep this file local and review every symbol mapping before enabling it.
+Ustaw `allow_camera_control` na `true` tylko wtedy, gdy chcesz zezwolić na `camera_set`. Przywracanie kamery jest zawsze dozwolone. Wysyłanie scenariusza wymaga także lokalnego mapowania `scenario_dispatch`; zobacz [opis API i konfiguracji](docs/API.md#konfiguracja-lokalna). Pozostaw ten plik lokalnie i przed włączeniem sprawdź każde mapowanie symbolu.
 
-## AI agent examples
+## Przykłady dla agentów AI
 
-Use the included client for a single read-only query:
+Użyj dołączonego klienta do wykonania pojedynczego zapytania tylko do odczytu:
 
 ```powershell
 $client = '.\client\powershell\Query-DevBridge.ps1'
@@ -91,7 +91,7 @@ $client = '.\client\powershell\Query-DevBridge.ps1'
   -Start 100,1000,200 -Direction 0,-1500,0 -Flags 1058
 ```
 
-An agent that speaks the file protocol directly should send one request at a time, include protocol version 1 and an expiry time, wait for the matching `response.json` ID, and treat `ok: false` as an error. The JSON below shows the request shape; calculate a fresh `expires_at_unix_ms` value for each request rather than copying the illustrative timestamp:
+Agent komunikujący się bezpośrednio przez protokół plikowy powinien wysyłać tylko jedno żądanie naraz, podawać wersję protokołu 1 i termin ważności, oczekiwać na `response.json` z pasującym `id` oraz traktować `ok: false` jako błąd. Poniższy JSON pokazuje format żądania. Dla każdego żądania oblicz nową wartość `expires_at_unix_ms`; nie kopiuj przykładowej daty:
 
 ```json
 {
@@ -108,36 +108,36 @@ An agent that speaks the file protocol directly should send one request at a tim
 }
 ```
 
-See [docs/API.md](docs/API.md) for the complete request format, response fields, errors, and mutation safeguards.
+Pełny format żądań, pola odpowiedzi, błędy i zabezpieczenia operacji zmieniających stan opisuje [docs/API.md](docs/API.md).
 
-### Codex and Claude Code
+### Codex i Claude Code
 
-Codex, Claude Code, or another coding agent can call the included PowerShell client from its terminal tool and parse the returned JSON. For example, ask the agent to inspect the current player and nearby floor without changing game state:
+Codex, Claude Code oraz inni agenci programistyczni mogą uruchamiać dołączonego klienta PowerShell w swoim terminalu i analizować zwrócony JSON. Przykład polecenia dla agenta, które nie zmienia stanu gry:
 
 ```text
-Use the ZenGin DevBridge PowerShell client. First call ping and check world_ready and capabilities. Then inspect PC_HERO with vob and sample the floor with surface_grid. Report the JSON findings. Do not call camera_set or scenario_start.
+Użyj klienta PowerShell ZenGin DevBridge. Najpierw wywołaj ping i sprawdź world_ready oraz capabilities. Następnie sprawdź PC_HERO komendą vob i zbadaj podłoże za pomocą surface_grid. Opisz wyniki JSON. Nie wywołuj camera_set ani scenario_start.
 ```
 
-When you explicitly authorize a camera change, have the agent check that `camera_set` is enabled, perform the requested action, and call `camera_restore` afterward. Scenario dispatch requires its own explicit authorization and a reviewed local symbol mapping. The API guide documents the same workflow for direct JSON-file clients.
+Jeśli jawnie zezwolisz na zmianę kamery, poproś agenta o sprawdzenie, czy `camera_set` jest dostępne, wykonanie żądanej operacji i późniejsze wywołanie `camera_restore`. Wysłanie scenariusza wymaga osobnej, jawnej zgody oraz sprawdzonego lokalnego mapowania symbolu. Przewodnik API opisuje ten sam sposób pracy dla klientów wysyłających pliki JSON bezpośrednio.
 
-## Compatibility and support
+## Kompatybilność i wsparcie
 
-- This preview targets Gothic II: Night of the Raven only.
-- The isolated testbed was verified with Gothic II 2.6 (fix) and Union 1.0M.
-- Requests without `protocol_version` are accepted as protocol version 1 to preserve existing clients.
-- Environment-specific scenario names and Daedalus symbols belong in the local configuration, never in the public plugin source.
-- For a verified build or later deployment, record the source revision, plugin version, and DLL SHA-256.
+- To wydanie preview obsługuje wyłącznie Gothic II: Noc Kruka.
+- Testy w odizolowanym środowisku wykonano z Gothic II 2.6 (fix) i Union 1.0M.
+- Dla zachowania zgodności starsze klienty mogą pomijać `protocol_version`; takie żądania są traktowane jako wersja 1.
+- Nazwy scenariuszy i symbole Daedalusa zależne od środowiska należą do lokalnej konfiguracji, a nie do publicznego kodu pluginu.
+- Przy zweryfikowanej kompilacji lub późniejszym wdrożeniu zapisuj rewizję źródeł, wersję pluginu i SHA-256 DLL.
 
-## Basic protocol checks
+## Podstawowe testy protokołu
 
-The included mock bridge checks that the PowerShell client sends protocol version 1 and a future expiry, handles a matching response, and sends a cancellation marker after its timeout:
+Dołączony test protokołu sprawdza, czy klient PowerShell wysyła wersję protokołu 1 i termin wygaśnięcia przypadający w przyszłości, obsługuje odpowiedź z pasującym identyfikatorem oraz zapisuje znacznik anulowania po przekroczeniu limitu czasu:
 
 ```powershell
 pwsh -NoProfile -File .\tests\Invoke-MockProtocolTests.ps1
 ```
 
-This verifies the client file workflow. Runtime smoke checks and a short idle comparison were also run in the isolated testbed; see [docs/TESTBED-STATUS.md](docs/TESTBED-STATUS.md) for scope and limits. Results can differ with another Gothic installation, Union build, or mod.
+Test sprawdza plikowy przepływ klienta. Testy działania w silniku oraz krótki pomiar bezczynności wykonano również w odizolowanym środowisku testowym; zakres i ograniczenia opisuje [docs/TESTBED-STATUS.md](docs/TESTBED-STATUS.md). Wyniki mogą się różnić w zależności od instalacji Gothica, wersji Union i moda.
 
-## License
+## Licencja
 
-The DevBridge source is MIT licensed. Third-party code and required notices are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The project does not redistribute the Union plugin template used during early development; its repository does not publish a license, so its scaffold and other files are excluded.
+Kod źródłowy DevBridge jest udostępniany na licencji MIT. Informacje o kodzie stron trzecich i wymagane treści licencji znajdują się w [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). Projekt nie rozpowszechnia szablonu pluginu Union używanego na wczesnym etapie prac; repozytorium tego szablonu nie publikuje licencji, dlatego jego pliki bazowe i pozostałe materiały zostały wykluczone.

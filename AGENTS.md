@@ -10,7 +10,7 @@
 ## Compatibility and project boundaries
 
 - Preserve compatibility with existing test clients: keep established commands, request payloads, response fields, and the one-request-at-a-time file workflow when possible.
-- Keep protocol additions backward-compatible. Requests without `protocol_version` are treated as protocol version 1; version additions and any breaking changes must be documented in `docs/API.md` and `CHANGELOG.md`.
+- Keep protocol additions backward-compatible. Requests without `protocol_version` are treated as protocol version 1; version additions and any breaking changes must be documented in both `docs/API.md` and `docs/API.en.md`, and both `CHANGELOG.md` and `CHANGELOG.en.md`.
 - Use local configuration for environment-specific exchange-directory names, scenario names, and Daedalus symbol mappings. Do not hard-code private scenario names or symbols into the public core.
 - Do not include private scripts, story content, game assets, logs, local audit reports, personal data, toolchains, compiler files, or Windows SDK files in public commits or release packages.
 - Do not add MCP, NPC diagnostics, or support for other Gothic versions to this preview.
@@ -24,4 +24,4 @@
 - Record supported game/Union versions, protocol changes, release version, and the built DLL SHA-256 in project documentation.
 - Build and test in an isolated game copy when runtime validation is needed. Do not alter original consumer or production installations while developing this canonical project.
 - Keep work local until the maintainer explicitly approves publishing. Never push this repository to GitHub without that approval.
-- Keep the English and Polish documentation in sync in the same change. Update `README.md` with `README.pl.md` and `docs/API.md` with `docs/API.pl.md`; preserve the language switches and keep command names, protocol fields, and code examples identical.
+- Polish is the default public documentation language: use `README.md`, `docs/API.md`, `CHANGELOG.md`, and `docs/TESTBED-STATUS.md` for Polish, with matching English files `README.en.md`, `docs/API.en.md`, `CHANGELOG.en.md`, and `docs/TESTBED-STATUS.en.md`. Update each language pair in the same change. Keep the language switches visible and preserve command names, protocol fields, and code examples exactly.

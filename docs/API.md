@@ -1,25 +1,25 @@
-[English](API.md) | [Polski](API.pl.md)
+[🇵🇱 Polski](API.md) | [🇬🇧 English](API.en.md)
 
-# DevBridge file API
+# Plikowe API DevBridge
 
-Protocol version: **1**. This is a local, single-request-at-a-time file protocol. The plugin polls from the Gothic render hook; it does not open a network port.
+Wersja protokołu: **1**. Jest to lokalny protokół plikowy obsługujący jedno żądanie naraz. Plugin odczytuje żądania w ramach hooka renderującego Gothica; nie otwiera portu sieciowego.
 
-## Exchange files
+## Pliki wymiany
 
-The default exchange folder is <game-root>\ZenGinDevBridge. A local configuration may choose a different single folder name, relative to the game root.
+Domyślnym katalogiem wymiany jest `<game-root>\ZenGinDevBridge`. Lokalna konfiguracja może wskazać inną pojedynczą nazwę katalogu względem katalogu głównego gry.
 
-| File | Purpose |
+| Plik | Przeznaczenie |
 | --- | --- |
-| request.json | One UTF-8 request object, written atomically by the client. |
-| response.json | The matching response object. Clients must compare id. |
-| cancel.<id> | Empty marker telling the plugin to stop work for that request. |
-| plugin-heartbeat.json | Plugin version, protocol version, hook status, and configuration validity. |
-| diagnostics.jsonl | Append-only error codes with request ID/command when available; no executable or working-directory paths. |
-| client.lock | Used by the bundled PowerShell client to serialize its own requests. |
+| request.json | Jeden obiekt żądania UTF-8, zapisywany przez klienta atomowo. |
+| response.json | Odpowiedź na pasujące żądanie. Klient musi porównać `id`. |
+| cancel.<id> | Pusty znacznik informujący plugin, by przerwał obsługę tego żądania. |
+| plugin-heartbeat.json | Wersja pluginu i protokołu, status hooka oraz poprawność konfiguracji. |
+| diagnostics.jsonl | Dziennik dopisywanych kodów błędów, z `id` i komendą, jeśli są dostępne; bez ścieżek do pliku wykonywalnego ani katalogu roboczego. |
+| client.lock | Blokada używana przez dołączonego klienta PowerShell do szeregowania własnych żądań. |
 
-Send one request at a time. The plugin validates the request ID before using it in a cancellation filename. Requests larger than 64 KiB are rejected. The plugin publishes responses by replacing a temporary file atomically. A response can be retried after a disk error without rerunning the command.
+Wysyłaj jedno żądanie naraz. Plugin sprawdza identyfikator żądania przed użyciem go w nazwie pliku anulowania. Żądania większe niż 64 KiB są odrzucane. Plugin publikuje odpowiedzi przez atomową podmianę pliku tymczasowego. Po błędzie dysku można ponowić zapis odpowiedzi bez ponownego wykonania komendy.
 
-## Request envelope
+## Koperta żądania
 
     {
       "id": "agent-0001",
@@ -28,16 +28,16 @@ Send one request at a time. The plugin validates the request ID before using it 
       "expires_at_unix_ms": 1795700000000
     }
 
-- id: required, 1–80 ASCII letters, digits, period, underscore, or hyphen; period and double-period are invalid.
-- command: required, up to 64 characters.
-- protocol_version: optional for older clients; if absent, the request is interpreted as version 1. Other versions receive protocol_version_unsupported.
-- expires_at_unix_ms: recommended absolute Unix time in milliseconds. The maximum accepted lifetime is 180 seconds. Older clients may omit it; for those requests, the plugin uses the request-file timestamp and a 120 second maximum age.
+- `id`: wymagane; 1–80 znaków ASCII: litery, cyfry, kropka, podkreślenie lub łącznik. Same wartości `.` i `..` są niedozwolone.
+- `command`: wymagane; maksymalnie 64 znaki.
+- `protocol_version`: opcjonalne dla starszych klientów; jeśli go brakuje, żądanie jest traktowane jako wersja 1. Inna wersja powoduje błąd `protocol_version_unsupported`.
+- `expires_at_unix_ms`: zalecany bezwzględny termin w milisekundach Unix. Maksymalny akceptowany czas do wygaśnięcia wynosi 180 sekund. Starsze klienty mogą pominąć to pole; plugin użyje wtedy czasu modyfikacji pliku żądania i limitu wieku wynoszącego 120 sekund.
 
-When a client deadline expires, it should create cancel.<id> and leave the request in place long enough for the plugin to observe cancellation and publish a result. A client must not delete or replace a request while the plugin may be processing it. The bundled client waits up to three seconds for cancellation to be acknowledged.
+Po upływie terminu klient powinien utworzyć `cancel.<id>` i pozostawić plik żądania na tyle długo, by plugin mógł zauważyć anulowanie i opublikować wynik. Klient nie może usuwać ani zastępować żądania, gdy plugin może je jeszcze obsługiwać. Dołączony klient czeka do trzech sekund na potwierdzenie anulowania.
 
-## Response envelope and errors
+## Koperta odpowiedzi i błędy
 
-Every response contains id, command, protocol_version, plugin_version, and ok. Error responses also contain:
+Każda odpowiedź zawiera `id`, `command`, `protocol_version`, `plugin_version` i `ok`. Odpowiedź błędu zawiera również:
 
     {
       "ok": false,
@@ -45,24 +45,24 @@ Every response contains id, command, protocol_version, plugin_version, and ok. E
       "error": "no world is currently loaded"
     }
 
-The legacy error string is preserved. Clients should branch on error_code.
+Starsze pole tekstowe `error` jest zachowane. Klient powinien podejmować decyzje na podstawie `error_code`.
 
-| Error code | Meaning |
+| Kod błędu | Znaczenie |
 | --- | --- |
-| invalid_request | Invalid JSON fields, types, ranges, vector, flags, or deadline. |
-| protocol_version_unsupported | The client requested an unsupported protocol version. |
-| timeout | The request expired before completion. |
-| cancelled | The client cancelled the request. |
-| world_not_ready | No game world is loaded. |
-| world_changed | The world changed while a batched scan was running; results were discarded. |
-| capability_disabled | A state-changing or configuration-backed command is disabled or unconfigured. |
-| unknown_command | The command name is not supported. |
-| scan_failed, parser_unavailable, configured_symbol_missing, scenario_queue_busy, camera_unavailable, target_vob_not_found | Command-specific failure; inspect error for details. |
-| internal_error | Unexpected plugin error; check diagnostics.jsonl. |
+| invalid_request | Nieprawidłowe pola JSON, typy, zakresy, wektor, flagi albo termin. |
+| protocol_version_unsupported | Klient zażądał nieobsługiwanej wersji protokołu. |
+| timeout | Żądanie wygasło przed zakończeniem obsługi. |
+| cancelled | Klient anulował żądanie. |
+| world_not_ready | Żaden świat gry nie jest załadowany. |
+| world_changed | Świat zmienił się podczas skanowania seriami; wyniki zostały odrzucone. |
+| capability_disabled | Komenda zmieniająca stan lub korzystająca z konfiguracji jest wyłączona albo nie została skonfigurowana. |
+| unknown_command | Nazwa komendy nie jest obsługiwana. |
+| scan_failed, parser_unavailable, configured_symbol_missing, scenario_queue_busy, camera_unavailable, target_vob_not_found | Błąd właściwy dla danej komendy; szczegóły znajdują się w polu `error`. |
+| internal_error | Nieoczekiwany błąd pluginu; sprawdź `diagnostics.jsonl`. |
 
-## Capabilities
+## Możliwości
 
-ping reports the plugin and protocol versions, whether a world is loaded, and capabilities. Capabilities separate read_only commands from mutating commands. A true value means the command is enabled/configured; a world or camera can still be unavailable at call time.
+`ping` zwraca wersje pluginu i protokołu, informację, czy świat jest załadowany, oraz zestaw możliwości. Możliwości rozdzielają komendy `read_only` od komend zmieniających stan. Wartość `true` oznacza, że komenda jest włączona lub skonfigurowana; świat albo kamera nadal mogą być niedostępne w chwili wywołania.
 
     {
       "plugin": "ZenGinDevBridge",
@@ -87,23 +87,23 @@ ping reports the plugin and protocol versions, whether a world is loaded, and ca
       }
     }
 
-## Commands
+## Komendy
 
 ### ping
 
-No additional fields. Returns plugin identity/version, world_ready, stage (retained for older clients), and capabilities.
+Nie wymaga dodatkowych pól. Zwraca tożsamość i wersję pluginu, `world_ready`, pole `stage` zachowane dla starszych klientów oraz możliwości.
 
 ### vob
 
     {"command":"vob","name":"PC_HERO"}
 
-Returns found; when found, also returns name, class, matrix, bbox3d_min, bbox3d_max, collision flags, and collision_object_present.
+Zwraca `found`; jeśli VOb został znaleziony, odpowiedź zawiera także `name`, `class`, `matrix`, `bbox3d_min`, `bbox3d_max`, flagi kolizji i `collision_object_present`.
 
 ### raycast
 
     {"command":"raycast","start":[100,1000,200],"direction":[0,-1500,0],"flags":1058}
 
-start and direction are finite [x,y,z] vectors with absolute components no larger than 10,000,000. flags is an integer from 0 to 32,767. The result has hit, ray length, hit position/height/normal, geometry kind, and material/VOb data when available.
+`start` i `direction` to skończone wektory `[x,y,z]`, których składowe bezwzględne nie przekraczają 10 000 000. `flags` jest liczbą całkowitą z zakresu 0–32 767. Wynik zawiera informację `hit`, długość promienia, pozycję/wysokość/normalną trafienia, rodzaj geometrii oraz — jeśli są dostępne — dane materiału i VOba.
 
 ### raycast_batch
 
@@ -116,7 +116,7 @@ start and direction are finite [x,y,z] vectors with absolute components no large
       ]
     }
 
-Accepts 1–256 probes. The plugin traces at most 16 probes per frame and returns ordered results after completion.
+Przyjmuje od 1 do 256 próbek. Plugin wykonuje maksymalnie 16 raycastów na klatkę i zwraca wyniki w tej samej kolejności.
 
 ### surface_grid
 
@@ -130,35 +130,35 @@ Accepts 1–256 probes. The plugin traces at most 16 probes per frame and return
       "include_bbox":false
     }
 
-Radii are 0–5,000, spacing is 10–5,000, down range is 10–100,000, and the generated grid is limited to 121 samples. The plugin processes up to 3 samples per frame. Each row compares visual/static-world/dynamic-VOb raycasts and player floor/water/ceiling support. include_bbox adds a VOb bounding-box trace.
+Wartości `radius_x` i `radius_z` mieszczą się w zakresie 0–5 000, `spacing` w zakresie 10–5 000, a `down_range` w zakresie 10–100 000. Wygenerowana siatka jest ograniczona do 121 próbek. Plugin obsługuje maksymalnie 3 próbki na klatkę. Każdy wiersz porównuje raycasty do geometrii wizualnej, świata statycznego i dynamicznych VObów oraz odczyty podłoża, wody i sufitu dla gracza. `include_bbox` dodaje raycast do bounding boxa VOba.
 
 ### camera_get
 
-No additional fields. Reads camera transforms, camera VOb data, and camera AI mode/flags when available.
+Nie wymaga dodatkowych pól. Odczytuje transformacje kamery, dane jej VOba oraz — jeśli są dostępne — tryb i flagi AI kamery.
 
-### camera_set — state-changing, disabled by default
+### camera_set — komenda zmieniająca stan, domyślnie wyłączona
 
     {"command":"camera_set","position":[100,300,400],"look_at":[0,100,0]}
 
-Provide either look_at as a finite vector or target_vob as a VOb name. The first change saves the original transform and camera AI flags. Further updates keep that original restore point. The plugin applies the transform only while the same camera and world remain current.
+Podaj `look_at` jako skończony wektor albo `target_vob` jako nazwę VOba. Pierwsza zmiana zapisuje pierwotną transformację i flagi AI kamery. Kolejne aktualizacje zachowują ten sam punkt przywracania. Plugin stosuje transformację tylko wtedy, gdy aktywne pozostają ten sam świat i ta sama kamera.
 
-### camera_restore — recovery command
+### camera_restore — komenda przywracania
 
-No additional fields. Always accepted, including when camera control is disabled. The response reports restored, camera_ai_restored, and world_matched. It does not dereference saved game pointers if the world/camera was replaced or became unavailable.
+Nie wymaga dodatkowych pól. Jest zawsze akceptowana, nawet gdy sterowanie kamerą jest wyłączone. Odpowiedź podaje `restored`, `camera_ai_restored` i `world_matched`. Jeśli świat lub kamera zostały zastąpione albo są niedostępne, komenda nie odwołuje się do zapisanych wskaźników gry.
 
-### scenario_start — state-changing, disabled by default
+### scenario_start — komenda zmieniająca stan, domyślnie wyłączona
 
     {"command":"scenario_start","scenario":"example_step"}
 
-Dispatch is available only when enabled and configured locally. The plugin writes the configured integer into the configured Daedalus symbol; it never calls a parser function from the render hook. The integer must be in the range 1–32,767. The scenario name is a local map key and is not built into the public plugin.
+Wysyłanie scenariusza działa tylko po lokalnym włączeniu i skonfigurowaniu. Plugin zapisuje skonfigurowaną liczbę całkowitą do wskazanego symbolu Daedalusa; nie wywołuje funkcji parsera z hooka renderującego. Wartość musi mieścić się w zakresie 1–32 767. Nazwa scenariusza jest kluczem lokalnego mapowania i nie jest wbudowana w publiczny plugin.
 
-### scenario_status — configuration-backed read
+### scenario_status — odczyt oparty na konfiguracji
 
-No additional fields. Reads configured Daedalus integer symbols. The response includes a scenario_status object plus flat aliases matching the locally configured keys, which lets existing environment-specific test clients keep their expected response fields.
+Nie wymaga dodatkowych pól. Odczytuje skonfigurowane symbole całkowitoliczbowe Daedalusa. Odpowiedź zawiera obiekt `scenario_status` oraz jego płaskie aliasy zgodne z lokalnie skonfigurowanymi kluczami, dzięki czemu istniejące klienty testowe mogą zachować oczekiwane pola odpowiedzi.
 
-## Local configuration
+## Konfiguracja lokalna
 
-Create <game-root>\ZenGinDevBridge.config.json only when you need a non-default exchange folder or state-changing command. The file is limited to 16 KiB and supports:
+Utwórz `<game-root>\ZenGinDevBridge.config.json` tylko wtedy, gdy potrzebujesz zmienić domyślny katalog wymiany lub włączyć komendę zmieniającą stan. Plik nie może przekraczać 16 KiB i obsługuje następujący format:
 
     {
       "config_version": 1,
@@ -172,16 +172,15 @@ Create <game-root>\ZenGinDevBridge.config.json only when you need a non-default 
       }
     }
 
-exchange_directory must be one folder name under the game root; absolute paths and parent traversal are rejected. Camera and scenario changes default to disabled. Scenario names, IDs, and Daedalus symbols belong in this local file; do not commit environment-specific mappings. If the file cannot be parsed or validated, mutating capabilities are disabled and the reason is reported by ping/heartbeat.
+`exchange_directory` musi być pojedynczą nazwą katalogu w katalogu głównym gry; ścieżki bezwzględne i przejścia do katalogu nadrzędnego są odrzucane. Zmiany kamery i scenariuszy są domyślnie wyłączone. Nazwy scenariuszy, identyfikatory i symbole Daedalusa przechowuj w tym lokalnym pliku; nie dodawaj mapowań zależnych od środowiska do repozytorium. Jeśli pliku nie można odczytać lub zweryfikować, możliwości zmieniające stan są wyłączane, a przyczyna jest raportowana przez `ping` i heartbeat.
 
-## Agent usage pattern
+## Zalecany sposób użycia przez agenta
 
-1. Call ping and inspect protocol_version, world_ready, and capabilities.
-2. Use vob, raycast, raycast_batch, or surface_grid for observation.
-3. Before camera_set or scenario_start, verify its mutating capability is true and obtain explicit task-level authorization from the user or calling system.
-4. Use a unique request ID, include an expiry, and wait for the response with that ID.
-5. On client timeout, write cancel.<id> and wait for the cancellation response before sending another request.
-6. After camera movement, call camera_restore and check its restored result.
+1. Wywołaj `ping` i sprawdź `protocol_version`, `world_ready` oraz `capabilities`.
+2. Do obserwacji używaj `vob`, `raycast`, `raycast_batch` lub `surface_grid`.
+3. Przed `camera_set` lub `scenario_start` sprawdź, czy dana możliwość zmieniająca stan ma wartość `true`, oraz uzyskaj jawną zgodę użytkownika lub systemu wywołującego.
+4. Używaj unikalnego identyfikatora żądania, ustaw termin ważności i czekaj na odpowiedź z tym samym `id`.
+5. Po przekroczeniu limitu czasu przez klienta zapisz `cancel.<id>` i zaczekaj na odpowiedź potwierdzającą anulowanie przed wysłaniem kolejnego żądania.
+6. Po zmianie kamery wywołaj `camera_restore` i sprawdź wynik w polu `restored`.
 
-For a current expiry value, calculate the Unix time in milliseconds at request creation and add the chosen timeout duration. Do not reuse the example timestamp from this document.
-
+Aby ustawić aktualny termin, w chwili tworzenia żądania oblicz czas Unix w milisekundach i dodaj do niego wybrany limit czasu. Nie używaj ponownie przykładowego terminu z tej dokumentacji.
