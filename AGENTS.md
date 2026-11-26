@@ -39,7 +39,7 @@
 - Keep protocol additions backward-compatible. Requests without `protocol_version` are treated as protocol version 1; version additions and any breaking changes must be documented in both `docs/API.md` and `docs/API.en.md`, and both `CHANGELOG.md` and `CHANGELOG.en.md`.
 - Use local configuration for environment-specific exchange-directory names, scenario names, and Daedalus symbol mappings. Do not hard-code private scenario names or symbols into the public core.
 - Do not include private scripts, story content, game assets, logs, local audit reports, personal data, toolchains, compiler files, or Windows SDK files in public commits or release packages.
-- Do not add MCP, NPC diagnostics, or support for other Gothic versions to this preview.
+- Keep new features within the approved ZenGin/Gothic II scope; do not add MCP or support for other Gothic versions in this release line.
 
 ## Engineering and release
 
@@ -50,3 +50,21 @@
 - Record supported game/Union versions, protocol changes, release version, and the built DLL SHA-256 in project documentation.
 - Build and test in an isolated game copy when runtime validation is needed. Do not alter original consumer or production installations while developing this canonical project.
 - Keep work local until the maintainer explicitly approves publishing. Never push this repository to GitHub without that approval.
+
+## Zarządzanie procesami testowymi / Test process management
+
+- Nie pozostawiaj uruchomionego Gothica ani innych zbędnych programów po zakończeniu testów.
+- Rejestruj PID i pełną ścieżkę każdego procesu uruchomionego na potrzeby testbedu.
+- Zamykaj tylko zweryfikowane procesy uruchomione przez agenta; nigdy nie kończ wszystkich procesów o danej nazwie.
+- Nie zamykaj programów użytkownika ani procesów innych instalacji Gothica. Nie ingeruj w GO3 ani GO3 DEV.
+- Preferuj prawidłowe zamknięcie. Zakończenie procesu wymuś tylko po sprawdzeniu PID i ścieżki oraz po nieskutecznej próbie normalnego zamknięcia.
+- Kontroluj procesy po każdym etapie testowym, przerwaniu i niepowodzeniu. W raporcie końcowym potwierdź, czy pozostał aktywny którykolwiek proces uruchomiony przez agenta.
+- Prowadź lokalny dziennik postępu ułatwiający wznowienie pracy; nie dodawaj do publicznego repozytorium prywatnych raportów ani danych środowiska testowego.
+
+- Do not leave Gothic or other unnecessary programs running after tests.
+- Record the PID and full path of every process started for the testbed.
+- Close only verified processes started by the agent; never terminate every process with a matching name.
+- Do not close the user's programs or processes from other Gothic installations. Do not interfere with GO3 or GO3 DEV.
+- Prefer a normal shutdown. Force-terminate only after checking the PID and path and after a normal shutdown has failed.
+- Check processes after each test stage, interruption, and failure. In the final report, confirm whether any process started by the agent remains active.
+- Keep a local progress log so work can resume; do not add private reports or testbed data to the public repository.
