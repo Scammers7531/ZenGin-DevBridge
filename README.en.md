@@ -140,4 +140,4 @@ This verifies the client file workflow. Runtime smoke checks and a short idle co
 
 ## License
 
-The DevBridge source is MIT licensed. Third-party code and required notices are listed in [THIRD_PARTY_NOTICES.md](THIRD_PARTY_NOTICES.md). The project does not redistribute the Union plugin template used during early development; its repository does not publish a license, so its scaffold and other files are excluded.
+The DevBridge source is MIT licensed. Third-party code and required notices are listed in [THIRD_PARTY_NOTICES.en.md](THIRD_PARTY_NOTICES.en.md). The project does not redistribute the Union plugin template used during early development; its repository does not publish a license, so its scaffold and other files are excluded.

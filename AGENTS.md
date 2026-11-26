@@ -1,5 +1,31 @@
 # Development guidance
 
+## Obowiązkowa polityka językowa / Mandatory language policy
+
+**Językiem podstawowym projektu jest polski, a dodatkowym angielski. Zasady poniżej są obowiązkowe dla każdego agenta AI pracującego w tym repozytorium.**
+
+- Każdy nowy dokument publiczny napisz najpierw po polsku, a następnie przygotuj jego pełne tłumaczenie na angielski.
+- Utrzymuj `README.md` po polsku jako domyślną stronę projektu na GitHubie, a `README.en.md` po angielsku.
+- Dokumentację API utrzymuj w `docs/API.md` po polsku i `docs/API.en.md` po angielsku. Instrukcje, poradniki, przykłady oraz pozostałą dokumentację publiczną prowadź w analogicznych parach językowych, w tym `THIRD_PARTY_NOTICES.md` po polsku i `THIRD_PARTY_NOTICES.en.md` po angielsku.
+- Wydania, changelog i opisy nowych funkcji prezentuj najpierw po polsku, a następnie po angielsku. Pliki changeloga to `CHANGELOG.md` i `CHANGELOG.en.md`; opis GitHub Release również ma mieć kolejność PL, potem EN.
+- Każda zmiana funkcjonalności wymaga równoczesnej aktualizacji obu wersji językowych w tym samym zestawie zmian. Nie publikuj niepełnego tłumaczenia ani wersji, które różnią się zakresem lub znaczeniem.
+- Nazwy funkcji, klas, komend API, parametrów i pól JSON pozostawiaj po angielsku. Przykłady kodu w parach dokumentów muszą być identyczne; tłumacz wyłącznie otaczający je opis.
+- Na początku dokumentów dwujęzycznych zachowuj widoczny przełącznik `🇵🇱 Polski | 🇬🇧 English`, z polskim jako pierwszym wyborem.
+- Przed commitem sprawdź kompletność obu wersji, zgodność merytoryczną, linki językowe i niezmienność nazw oraz przykładów kodu.
+- Teksty licencji i wymagane noty prawne stron trzecich zachowuj dokładnie w oryginalnym brzmieniu; nie zastępuj ich tłumaczeniem.
+
+**English translation — the same rules are mandatory for every AI agent working in this repository.**
+
+- Polish is the project's primary language; English is the secondary language. Write every new public document in Polish first, then produce a complete English translation.
+- Keep `README.md` in Polish as GitHub's default project page and `README.en.md` in English.
+- Keep the API reference in `docs/API.md` in Polish and `docs/API.en.md` in English. Maintain installation instructions, guides, examples, and all other public documentation in matching language pairs, including `THIRD_PARTY_NOTICES.md` in Polish and `THIRD_PARTY_NOTICES.en.md` in English.
+- Present release information, the changelog, and new feature descriptions in Polish first and English second. The changelog files are `CHANGELOG.md` and `CHANGELOG.en.md`; GitHub Release descriptions must use the same PL-then-EN order.
+- Every functional change requires both language versions to be updated in the same change set. Do not publish incomplete translations or versions that differ in scope or meaning.
+- Keep function, class, API command, parameter, and JSON field names in English. Code examples in each documentation pair must be identical; translate only the surrounding prose.
+- Preserve a visible `🇵🇱 Polski | 🇬🇧 English` language switch at the top of bilingual documents, with Polish as the first choice.
+- Before committing, verify both versions are complete and semantically aligned, links work, and code names and examples are unchanged.
+- Preserve license texts and required third-party legal notices verbatim; do not replace them with translations.
+
 ## Canonical source and deployment
 
 - This repository is the canonical source project for ZenGin DevBridge.
@@ -20,8 +46,7 @@
 - Keep changes narrow and preserve working universal diagnostics, raycasts, `surface_grid`, and camera tools.
 - Treat camera changes and scenario dispatch as state-changing operations. Keep them disabled by default, expose their availability through capabilities, and retain a safe restore path.
 - Keep the file protocol local. Validate request size, IDs, numeric inputs, deadlines, and world identity before using game pointers.
-- Keep third-party source pinned to reviewed commits and preserve each dependency's required notices in `THIRD_PARTY_NOTICES.md` and binary release materials.
+- Keep third-party source pinned to reviewed commits and preserve each dependency's required notices in both `THIRD_PARTY_NOTICES.md` and `THIRD_PARTY_NOTICES.en.md`, and in binary release materials.
 - Record supported game/Union versions, protocol changes, release version, and the built DLL SHA-256 in project documentation.
 - Build and test in an isolated game copy when runtime validation is needed. Do not alter original consumer or production installations while developing this canonical project.
 - Keep work local until the maintainer explicitly approves publishing. Never push this repository to GitHub without that approval.
-- Polish is the default public documentation language: use `README.md`, `docs/API.md`, `CHANGELOG.md`, and `docs/TESTBED-STATUS.md` for Polish, with matching English files `README.en.md`, `docs/API.en.md`, `CHANGELOG.en.md`, and `docs/TESTBED-STATUS.en.md`. Update each language pair in the same change. Keep the language switches visible and preserve command names, protocol fields, and code examples exactly.
