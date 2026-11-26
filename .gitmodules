@@ -1,0 +1,6 @@
+[submodule "third_party/union-api"]
+	path = third_party/union-api
+	url = https://gitlab.com/union-framework/union-api.git
+[submodule "third_party/gothic-api"]
+	path = third_party/gothic-api
+	url = https://gitlab.com/union-framework/gothic-api.git

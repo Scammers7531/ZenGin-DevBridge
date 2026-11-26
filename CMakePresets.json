@@ -1,0 +1,27 @@
+{
+  "version": 3,
+  "cmakeMinimumRequired": {
+    "major": 3,
+    "minor": 24,
+    "patch": 0
+  },
+  "configurePresets": [
+    {
+      "name": "g2a-release",
+      "displayName": "Gothic II: Night of the Raven x86 Release",
+      "generator": "Ninja",
+      "binaryDir": "${sourceDir}/build/g2a-release",
+      "cacheVariables": {
+        "CMAKE_BUILD_TYPE": "Release",
+        "GOTHIC_API_G2A": "ON"
+      }
+    }
+  ],
+  "buildPresets": [
+    {
+      "name": "g2a-release",
+      "configurePreset": "g2a-release",
+      "jobs": 2
+    }
+  ]
+}
