@@ -41,6 +41,7 @@ $requestPath=Join-Path $ExchangeDirectory 'request.json'
 $tempPath=Join-Path $ExchangeDirectory "request.$id.tmp"
 $responsePath=Join-Path $ExchangeDirectory 'response.json'
 $lockStream=$null
+$lockAcquired=$false
 function Add-HitColumns([System.Collections.IDictionary]$Row,[string]$Prefix,$Hit){
     $Row[$Prefix+'_hit']=[bool]$Hit.hit
     $Row[$Prefix+'_kind']=$Hit.kind
@@ -53,6 +54,7 @@ function Add-HitColumns([System.Collections.IDictionary]$Row,[string]$Prefix,$Hi
 }
 try{
     $lockStream=[IO.File]::Open($lockPath,[IO.FileMode]::CreateNew,[IO.FileAccess]::Write,[IO.FileShare]::None)
+    $lockAcquired=$true
     $lockBytes=[Text.Encoding]::ASCII.GetBytes($id)
     $lockStream.Write($lockBytes,0,$lockBytes.Length)
     $lockStream.Dispose();$lockStream=$null
@@ -138,5 +140,11 @@ try{
 finally{
     if($lockStream){$lockStream.Dispose()}
     if(Test-Path -LiteralPath $tempPath){Remove-Item -LiteralPath $tempPath -Force}
-    if(Test-Path -LiteralPath $lockPath){Remove-Item -LiteralPath $lockPath -Force}
+    if($lockAcquired -and (Test-Path -LiteralPath $lockPath)){
+        try{
+            if([IO.File]::ReadAllText($lockPath,[Text.Encoding]::ASCII) -eq $id){
+                Remove-Item -LiteralPath $lockPath -Force -ErrorAction Stop
+            }
+        }catch{}
+    }
 }

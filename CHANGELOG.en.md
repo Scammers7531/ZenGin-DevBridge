@@ -2,6 +2,15 @@
 
 # Changelog
 
+## 0.1.1 candidate — 2026-11-26 (unreleased)
+
+- Split ready-to-use DLL requirements from source-build requirements; added a direct release link and practical plugin use cases.
+- Expanded protocol documentation to cover every error code, rejections without `response.json`, deadlines, cancellation, camera restore, scenario retries, and configuration loading.
+- Fixed `client.lock` cleanup so a client that did not acquire the lock cannot remove another process's lock file.
+- Added checks that configured Daedalus symbols are one-element integer variables and that the queue symbol is not constant.
+- Added a concurrent-client regression test; the `v0.1.0` tag and release remain unchanged.
+- SHA-256 of the local Windows x86 candidate build: `C4E8213AE394352550FF31709A83E6FEA8FC6118CCDA7435554BE47AB552644A`.
+
 ## Documentation update — 2026-11-26
 
 - Set Polish as the default public documentation language and added full English counterparts with language switches.

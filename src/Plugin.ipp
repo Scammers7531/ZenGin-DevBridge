@@ -283,6 +283,10 @@ struct BridgeError : std::runtime_error {
     throw BridgeError(code, message);
 }
 
+bool isIntegerScalarSymbol(const zCPar_Symbol* symbol) {
+    return symbol != nullptr && symbol->type == zPAR_TYPE_INT && symbol->ele == 1;
+}
+
 std::string safeErrorText(const std::string& text) {
     constexpr size_t kMaximumErrorLength = 256;
     std::string safe = text.substr(0, kMaximumErrorLength);
@@ -900,6 +904,10 @@ void processRequest() {
                     if (requestIndex < 0) fail("configured_symbol_missing", "scenario queue symbol was not found");
                     zCPar_Symbol* requestSymbol = parser->GetSymbol(requestIndex);
                     if (!requestSymbol) fail("configured_symbol_unavailable", "scenario queue symbol is unavailable");
+                    if (!isIntegerScalarSymbol(requestSymbol))
+                        fail("configured_symbol_type_mismatch", "scenario queue symbol must be a scalar integer");
+                    if ((requestSymbol->flags & zPAR_FLAG_CONST) != 0)
+                        fail("configured_symbol_not_writable", "scenario queue symbol must be writable");
                     int pendingRequest = 0;
                     requestSymbol->GetValue(pendingRequest, 0);
                     if (pendingRequest != 0)
@@ -927,6 +935,8 @@ void processRequest() {
                     if (index < 0) fail("configured_symbol_missing", "a configured status symbol was not found");
                     zCPar_Symbol* symbol = parser->GetSymbol(index);
                     if (!symbol) fail("configured_symbol_unavailable", "a configured status symbol is unavailable");
+                    if (!isIntegerScalarSymbol(symbol))
+                        fail("configured_symbol_type_mismatch", "configured status symbol must be a scalar integer");
                     int value = 0;
                     symbol->GetValue(value, 0);
                     values[it.key()] = value;

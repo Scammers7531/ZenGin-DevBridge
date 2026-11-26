@@ -4,7 +4,9 @@
 
 ZenGin DevBridge is a local file based diagnostic plugin for **Gothic II: Night of the Raven (x86)**. It lets a local script or AI agent inspect the loaded world through the Union API without adding a network listener.
 
-Version `0.1.0` is a public preview. It is intended for modders who can build and test a Union plugin and understand that the game is a live process.
+Version `0.1.0` is a public preview for testing with Gothic II: Night of the Raven. You can use the ready-to-use DLL or build the project from source; the requirements for these two paths are listed separately below. The plugin runs inside the active game process.
+
+**Ready-to-use release:** [Download ZenGinDevBridge-0.1.0-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) · [release notes and SHA-256 checksums](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0). Development tools are not required to use the DLL.
 
 ## Included tools
 
@@ -18,14 +20,30 @@ Version `0.1.0` is a public preview. It is intended for modders who can build an
 
 Read-only commands are available by default. `camera_set` and `scenario_start` change game state and require local opt-in. `camera_restore` remains available to clear a DevBridge camera override.
 
+## Practical uses
+
+- Check whether `PC_HERO` or another VOb exists in the loaded world and inspect its class, transform, and bounds.
+- Compare visual geometry, the static world, and dynamic VObs to find collision discrepancies with `raycast`, `raycast_batch`, and `surface_grid`.
+- Save results as JSON or CSV and compare them across map or mod configuration changes.
+- Set the camera for a repeatable scene review when camera control is enabled locally, then restore the original setup with `camera_restore`.
+- In a test installation, dispatch a locally configured scenario and read configured counters/status values without adding scenario names to the public plugin.
+
 ## Requirements
+
+### Using the ready-to-use DLL
 
 - Windows 10 or later.
 - Gothic II: Night of the Raven, x86, with a compatible Union installation.
-- Visual Studio 2022 C++ x86 build tools and a Windows 10 SDK.
+- Download the [ready-to-use ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) or review the [release notes](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0).
+
+Visual Studio, CMake, Ninja, and Git are not required to run the ready-to-use DLL. Gothic II and Union must already be installed.
+
+### Building from source
+
+- Windows with Visual Studio 2022 C++ Build Tools for x86 and the Windows 10 SDK.
 - CMake 3.24 or newer, Ninja, and Git.
 
-The project builds against the pinned Union API and Gothic API submodules. It does not include private project content or game assets.
+The game and a compatible Union installation are needed for runtime use and testing, but not for compilation itself. The project builds against the pinned Union API and Gothic API submodules; the repository does not include private project content or game assets.
 
 ## Build
 
@@ -56,7 +74,6 @@ The resulting DLL is `build\g2a-release\ZenGinDevBridge.dll`. The script does no
 4. Run the PowerShell client from this repository, supplying the game path:
 
    ```powershell
-   .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II'
    .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II' -Command ping
    ```
 
@@ -78,6 +95,8 @@ Place `ZenGinDevBridge.config.json` in the game root, next to the `System` folde
 ```
 
 Set `allow_camera_control` to `true` only when you want to permit `camera_set`. Camera restore is always accepted. Scenario dispatch additionally needs a local `scenario_dispatch` mapping; see [the API and configuration reference](docs/API.en.md#local-configuration). Keep this file local and review every symbol mapping before enabling it.
+
+The plugin loads configuration when its render hook first runs after game startup and caches it for the lifetime of the process. Exit and restart the game after every configuration change. Restarting only the PowerShell client does not reload the plugin configuration.
 
 ## AI agent examples
 
@@ -130,10 +149,11 @@ When you explicitly authorize a camera change, have the agent check that `camera
 
 ## Basic protocol checks
 
-The included mock bridge checks that the PowerShell client sends protocol version 1 and a future expiry, handles a matching response, and sends a cancellation marker after its timeout:
+The included checks cover the protocol exchange, timeout cancellation, and two clients running concurrently against one exchange folder. The lock regression test confirms that a client that did not acquire the lock cannot remove the lock or request owned by the first client:
 
 ```powershell
 pwsh -NoProfile -File .\tests\Invoke-MockProtocolTests.ps1
+pwsh -NoProfile -File .\tests\Invoke-ClientLockTests.ps1
 ```
 
 This verifies the client file workflow. Runtime smoke checks and a short idle comparison were also run in the isolated testbed; see [docs/TESTBED-STATUS.en.md](docs/TESTBED-STATUS.en.md) for scope and limits. Results can differ with another Gothic installation, Union build, or mod.

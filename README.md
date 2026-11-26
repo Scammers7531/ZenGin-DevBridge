@@ -4,7 +4,9 @@
 
 ZenGin DevBridge to lokalny plugin diagnostyczny oparty na wymianie plików dla **Gothic II: Noc Kruka (x86)**. Umożliwia lokalnym skryptom i agentom AI odczytywanie stanu załadowanego świata przez Union API, bez uruchamiania serwera sieciowego.
 
-Wersja `0.1.0` jest publicznym wydaniem preview. Jest przeznaczona dla modderów, którzy potrafią kompilować i testować pluginy Union oraz rozumieją, że gra jest działającym procesem.
+Wersja `0.1.0` jest publicznym wydaniem preview do testowania z Gothic II: Noc Kruka. Możesz użyć gotowej biblioteki DLL albo skompilować projekt ze źródeł; wymagania tych dwóch sposobów są opisane osobno poniżej. Plugin działa wewnątrz aktywnego procesu gry.
+
+**Gotowe wydanie:** [Pobierz paczkę ZenGinDevBridge-0.1.0-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) · [opis wydania i sumy SHA-256](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0). Do użycia DLL nie są potrzebne narzędzia programistyczne.
 
 ## Dostępne narzędzia
 
@@ -18,14 +20,30 @@ Wersja `0.1.0` jest publicznym wydaniem preview. Jest przeznaczona dla modderów
 
 Domyślnie dostępne są komendy tylko do odczytu. `camera_set` i `scenario_start` zmieniają stan gry i wymagają lokalnego włączenia. `camera_restore` jest zawsze dostępne, aby usunąć nadpisanie kamery ustawione przez DevBridge.
 
+## Praktyczne zastosowania
+
+- Sprawdź, czy `PC_HERO` lub inny VOb istnieje w załadowanym świecie, oraz odczytaj jego klasę, transformację i granice.
+- Porównaj geometrię wizualną, świat statyczny i dynamiczne VOby, aby znaleźć rozbieżności kolizji za pomocą `raycast`, `raycast_batch` i `surface_grid`.
+- Zapisz wyniki do JSON lub CSV i porównuj je między zmianami mapy albo konfiguracji moda.
+- Ustaw kamerę do powtarzalnego przeglądu sceny, jeśli lokalnie włączono sterowanie; po inspekcji przywróć pierwotne ustawienie przez `camera_restore`.
+- W testowej instalacji wyślij lokalnie skonfigurowany scenariusz i odczytaj skonfigurowane liczniki/statusy bez dodawania nazw scenariuszy do publicznego pluginu.
+
 ## Wymagania
+
+### Korzystanie z gotowej biblioteki DLL
 
 - Windows 10 lub nowszy.
 - Gothic II: Noc Kruka w wersji x86 z kompatybilną instalacją Union.
-- Visual Studio 2022 C++ x86 Build Tools i Windows 10 SDK.
+- Pobierz [gotową paczkę ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) lub sprawdź [opis wydania](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0).
+
+Do uruchomienia gotowej DLL nie są potrzebne Visual Studio, CMake, Ninja ani Git. Gothic II i Union muszą być już zainstalowane.
+
+### Kompilacja ze źródeł
+
+- Windows z Visual Studio 2022 C++ Build Tools dla x86 oraz Windows 10 SDK.
 - CMake 3.24 lub nowszy, Ninja i Git.
 
-Projekt kompiluje się z przypiętymi podmodułami Union API i Gothic API. Nie zawiera prywatnych materiałów projektowych ani zasobów gry.
+Gra i kompatybilna instalacja Union są potrzebne do uruchomienia oraz testów runtime, ale nie do samej kompilacji. Projekt kompiluje się z przypiętymi podmodułami Union API i Gothic API; repozytorium nie zawiera prywatnych materiałów projektowych ani zasobów gry.
 
 ## Kompilacja
 
@@ -56,7 +74,6 @@ Wynikowa biblioteka DLL znajduje się w `build\g2a-release\ZenGinDevBridge.dll`.
 4. Uruchom klienta PowerShell z tego repozytorium, podając ścieżkę do gry:
 
    ```powershell
-   .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II'
    .\client\powershell\Query-DevBridge.ps1 -GameRoot 'C:\Games\Gothic II' -Command ping
    ```
 
@@ -78,6 +95,8 @@ Umieść plik `ZenGinDevBridge.config.json` w katalogu głównym gry, obok folde
 ```
 
 Ustaw `allow_camera_control` na `true` tylko wtedy, gdy chcesz zezwolić na `camera_set`. Przywracanie kamery jest zawsze dozwolone. Wysyłanie scenariusza wymaga także lokalnego mapowania `scenario_dispatch`; zobacz [opis API i konfiguracji](docs/API.md#konfiguracja-lokalna). Pozostaw ten plik lokalnie i przed włączeniem sprawdź każde mapowanie symbolu.
+
+Plugin wczytuje konfigurację przy pierwszym uruchomieniu hooka renderującego po starcie gry i zachowuje ją w pamięci do końca procesu. Po każdej zmianie pliku zamknij i uruchom ponownie grę. Samo ponowne uruchomienie klienta PowerShell nie przeładuje konfiguracji pluginu.
 
 ## Przykłady dla agentów AI
 
@@ -130,10 +149,11 @@ Jeśli jawnie zezwolisz na zmianę kamery, poproś agenta o sprawdzenie, czy `ca
 
 ## Podstawowe testy protokołu
 
-Dołączony test protokołu sprawdza, czy klient PowerShell wysyła wersję protokołu 1 i termin wygaśnięcia przypadający w przyszłości, obsługuje odpowiedź z pasującym identyfikatorem oraz zapisuje znacznik anulowania po przekroczeniu limitu czasu:
+Dołączone testy sprawdzają wymianę protokołu, anulowanie po przekroczeniu terminu oraz współbieżne uruchomienie dwóch klientów współdzielących katalog wymiany. Test blokady potwierdza, że klient, który jej nie uzyskał, nie usuwa blokady ani żądania właściciela:
 
 ```powershell
 pwsh -NoProfile -File .\tests\Invoke-MockProtocolTests.ps1
+pwsh -NoProfile -File .\tests\Invoke-ClientLockTests.ps1
 ```
 
 Test sprawdza plikowy przepływ klienta. Testy działania w silniku oraz krótki pomiar bezczynności wykonano również w odizolowanym środowisku testowym; zakres i ograniczenia opisuje [docs/TESTBED-STATUS.md](docs/TESTBED-STATUS.md). Wyniki mogą się różnić w zależności od instalacji Gothica, wersji Union i moda.
