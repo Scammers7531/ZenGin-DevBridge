@@ -1,3 +1,5 @@
+[English](API.md) | [Polski](API.pl.md)
+
 # DevBridge file API
 
 Protocol version: **1**. This is a local, single-request-at-a-time file protocol. The plugin polls from the Gothic render hook; it does not open a network port.

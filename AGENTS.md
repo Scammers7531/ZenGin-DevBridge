@@ -24,3 +24,4 @@
 - Record supported game/Union versions, protocol changes, release version, and the built DLL SHA-256 in project documentation.
 - Build and test in an isolated game copy when runtime validation is needed. Do not alter original consumer or production installations while developing this canonical project.
 - Keep work local until the maintainer explicitly approves publishing. Never push this repository to GitHub without that approval.
+- Keep the English and Polish documentation in sync in the same change. Update `README.md` with `README.pl.md` and `docs/API.md` with `docs/API.pl.md`; preserve the language switches and keep command names, protocol fields, and code examples identical.

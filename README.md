@@ -1,3 +1,5 @@
+[English](README.md) | [Polski](README.pl.md)
+
 # ZenGin DevBridge
 
 ZenGin DevBridge is a local file based diagnostic plugin for **Gothic II: Night of the Raven (x86)**. It lets a local script or AI agent inspect the loaded world through the Union API without adding a network listener.
