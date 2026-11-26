@@ -4,9 +4,9 @@
 
 ZenGin DevBridge to lokalny plugin diagnostyczny oparty na wymianie plików dla **Gothic II: Noc Kruka (x86)**. Umożliwia lokalnym skryptom i agentom AI odczytywanie stanu załadowanego świata przez Union API, bez uruchamiania serwera sieciowego.
 
-Wersja `0.1.1` została przygotowana i zweryfikowana w izolowanym testbedzie Gothic II: Noc Kruka 2.6 (fix) z Union 1.0M. Pakiet nie jest jeszcze opublikowany; najnowszym publicznym wydaniem pozostaje `0.1.0`. Możesz użyć gotowej biblioteki DLL albo skompilować projekt ze źródeł; wymagania tych dwóch sposobów są opisane osobno poniżej. Plugin działa wewnątrz aktywnego procesu gry.
+Wersja `0.1.1` jest wydaniem przedpremierowym zweryfikowanym w izolowanym testbedzie Gothic II: Noc Kruka 2.6 (fix) z Union 1.0M. Możesz użyć gotowej biblioteki DLL albo skompilować projekt ze źródeł; wymagania tych dwóch sposobów są opisane osobno poniżej. Plugin działa wewnątrz aktywnego procesu gry.
 
-**Gotowe wydanie:** [Pobierz paczkę ZenGinDevBridge-0.1.0-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) · [opis wydania i sumy SHA-256](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0). Do użycia DLL nie są potrzebne narzędzia programistyczne.
+**Gotowe wydanie przedpremierowe:** [Pobierz paczkę ZenGinDevBridge-0.1.1-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) · [opis wydania i sumy SHA-256](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1). Do użycia DLL nie są potrzebne narzędzia programistyczne.
 
 ## Dostępne narzędzia
 
@@ -34,7 +34,7 @@ Domyślnie dostępne są komendy tylko do odczytu. `camera_set` i `scenario_star
 
 - Windows 10 lub nowszy.
 - Gothic II: Noc Kruka w wersji x86 z kompatybilną instalacją Union.
-- Pobierz [gotową paczkę ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) lub sprawdź [opis wydania](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0).
+- Pobierz [gotową paczkę ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) lub sprawdź [opis wydania](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1).
 
 Do uruchomienia gotowej DLL nie są potrzebne Visual Studio, CMake, Ninja ani Git. Gothic II i Union muszą być już zainstalowane.
 

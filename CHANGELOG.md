@@ -2,7 +2,7 @@
 
 # Dziennik zmian
 
-## 0.1.1 — 2026-11-26 (pakiet zweryfikowany, nieopublikowany)
+## 0.1.1 — 2026-11-26 (wydanie przedpremierowe, pakiet zweryfikowany)
 
 - Rozdzielono wymagania uruchamiania gotowej DLL i kompilacji ze źródeł; dodano bezpośredni odnośnik do wydania oraz praktyczne zastosowania pluginu.
 - Uzupełniono dokumentację protokołu o wszystkie kody błędów, odrzucenia bez `response.json`, terminy, anulowanie, przywracanie kamery, ponawianie scenariuszy i wczytywanie konfiguracji.

@@ -2,7 +2,7 @@
 
 # Changelog
 
-## 0.1.1 — 2026-11-26 (package verified, unpublished)
+## 0.1.1 — 2026-11-26 (verified pre-release package)
 
 - Split ready-to-use DLL requirements from source-build requirements; added a direct release link and practical plugin use cases.
 - Expanded protocol documentation to cover every error code, rejections without `response.json`, deadlines, cancellation, camera restore, scenario retries, and configuration loading.

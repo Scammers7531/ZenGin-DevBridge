@@ -4,9 +4,9 @@
 
 ZenGin DevBridge is a local file based diagnostic plugin for **Gothic II: Night of the Raven (x86)**. It lets a local script or AI agent inspect the loaded world through the Union API without adding a network listener.
 
-Version `0.1.1` has been prepared and verified in an isolated testbed running Gothic II: Night of the Raven 2.6 (fix) with Union 1.0M. The package has not been published yet; `0.1.0` remains the latest public release. You can use the ready-to-use DLL or build the project from source; the requirements for these two paths are listed separately below. The plugin runs inside the active game process.
+Version `0.1.1` is a pre-release verified in an isolated testbed running Gothic II: Night of the Raven 2.6 (fix) with Union 1.0M. You can use the ready-to-use DLL or build the project from source; the requirements for these two paths are listed separately below. The plugin runs inside the active game process.
 
-**Ready-to-use release:** [Download ZenGinDevBridge-0.1.0-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) · [release notes and SHA-256 checksums](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0). Development tools are not required to use the DLL.
+**Ready-to-use pre-release:** [Download ZenGinDevBridge-0.1.1-win32.zip](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) · [release notes and SHA-256 checksums](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1). Development tools are not required to use the DLL.
 
 ## Included tools
 
@@ -34,7 +34,7 @@ Read-only commands are available by default. `camera_set` and `scenario_start` c
 
 - Windows 10 or later.
 - Gothic II: Night of the Raven, x86, with a compatible Union installation.
-- Download the [ready-to-use ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.0/ZenGinDevBridge-0.1.0-win32.zip) or review the [release notes](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.0).
+- Download the [ready-to-use ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) or review the [release notes](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1).
 
 Visual Studio, CMake, Ninja, and Git are not required to run the ready-to-use DLL. Gothic II and Union must already be installed.
 
