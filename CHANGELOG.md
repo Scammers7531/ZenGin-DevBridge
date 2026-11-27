@@ -2,7 +2,7 @@
 
 # Dziennik zmian
 
-## 0.2.0 — kandydat lokalny, 2026-11-27 (nieopublikowany)
+## 0.2.0 — 2026-11-27 (wydanie przedpremierowe)
 
 - Rozszerzono API o limitowane wyszukiwanie i hierarchię VObów, diagnostykę NPC oraz szczegółowy stan bohatera i jego kolizji.
 - Dodano inspekcję waypointów, lokalnego grafu WayNetu, wykrywanie odizolowanych i niespójnych połączeń oraz trasę wyznaczaną ograniczonym algorytmem Dijkstry. Wynik grafowy jawnie nie potwierdza fizycznej przechodniości.
@@ -23,8 +23,8 @@
 - Rozbieżność około 74,646 jednostki pomiędzy końcową pozycją jednej odpowiedzi ruchu i późniejszym player_state sprawdzono w kodzie: obie komendy odczytują tę samą pozycję świata VOba i stosują normę euklidesową. Dodatkowy wektor jest niemal dokładnie równoległy do poprzedniego ruchu i odpowiada około 0,30 s chodu przy zmierzonej prędkości. Jest zgodny z odczytem późniejszego stanu świata; dokładny odstęp czasu i stan wejścia nie zostały zapisane, więc konkretnej przyczyny nie da się potwierdzić. Nie znaleziono dowodu na błąd pomiaru.
 - Przy domyślnej konfiguracji ping zgłosił sterowanie wyłączone, a player_move otrzymało capability_disabled.
 - Test anulowania długiego monitorowania zwrócił timeout, usunął aktywne żądanie i pozostawił działający ping. Jedyny pomiar wydajności z pełnymi danymi w lokalnym dzienniku wykonano na porównawczej DLL SHA-256 `89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5`, a nie na finalnej DLL B28: w 15-sekundowym pomiarze bezczynności Gothica zużycie CPU wyniosło 15,406 s / 15,025 s czasu ściennego (102,54% jednego rdzenia), a pamięć 392,5→393,5 MiB; bez pluginu 15,031 s / 15,039 s (99,95%), pamięć 388,1→386,8 MiB. Podczas ośmiu skanów VObów zanotowano 13,347 s czasu łącznego, średnio 1 662 ms na żądanie, 97,51% jednego rdzenia i średnio 16 816 węzłów; czas żądania obejmował uruchomienie osobnego klienta PowerShell. Wyniki nie izolują narzutu pluginu. Nie ma porównywalnego pomiaru wydajności dla DLL B28, więc liczb z innych prób nie przypisujemy finalnemu plikowi.
-- Finalna DLL B28 potwierdziła ruch do przodu, dojście do celów i wykrywanie zatrzymania; zwykłe klawisze pozwalały chodzić w bok, choć strafe pluginu nie zmieniał X/Z. Po udokumentowaniu ograniczenia eksperymentalnego i wyjaśnieniu rozbieżności odczytów pozycji lokalny kandydat jest gotowy do rozważenia jako Pre-release.
-- Wydanie pozostaje lokalnym kandydatem; brak tagu, publikacji oraz wdrożenia do GO3 lub GO3 DEV.
+- Finalna DLL B28 potwierdziła ruch do przodu, dojście do celów i wykrywanie zatrzymania; zwykłe klawisze pozwalały chodzić w bok, choć strafe pluginu nie zmieniał X/Z. Ograniczenie ruchu bocznego pozostaje eksperymentalne; przyczyny dodatkowego przesunięcia między odczytami pozycji nie potwierdzono.
+- Opublikowano [v0.2.0 jako Pre-release](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0). Paczka ZIP (399 112 bajtów), SHA-256 `4526FF587D4215DFF90CA50773C61BBF92B44D7F6341FF467DCA20E8B90BE05B`. Późniejsze poprawki redakcyjne na main nie zmieniają opublikowanej paczki ani tagu.
 
 ## 0.1.1 — 2026-11-26 (wydanie przedpremierowe, pakiet zweryfikowany)
 
