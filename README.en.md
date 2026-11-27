@@ -137,4 +137,4 @@ Run runtime and player-control tests only in an isolated game installation, afte
 - [Test environment and results](docs/TESTBED-STATUS.en.md)
 - [MIT license](LICENSE) and [third-party notices](THIRD_PARTY_NOTICES.en.md)
 
-The v0.2.0 release package remains unchanged; current documentation corrections are available on the `main` branch.
+The v0.2.0 source tag still points to historical commit `117160a7042729dda08cd4f48e87b41f6f901267` and is not rewritten. Documentation on `main` may be newer than the tagged snapshot; download the current package from the [release page](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0) and verify its ZIP using the [SHA-256 file](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.2.0/SHA256SUMS-v0.2.0.txt).

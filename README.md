@@ -137,4 +137,4 @@ Testy runtime i sterowania wykonuj tylko w odizolowanej instalacji gry, po zako�
 - [Środowisko testowe i wyniki](docs/TESTBED-STATUS.md)
 - [Licencja MIT](LICENSE) i [informacje o zależnościach](THIRD_PARTY_NOTICES.md)
 
-Paczka wydania v0.2.0 pozostaje niezmieniona; aktualne poprawki redakcyjne dokumentacji są dostępne w gałęzi `main`.
+Tag źródłowy v0.2.0 nadal wskazuje na historyczny commit `117160a7042729dda08cd4f48e87b41f6f901267` i nie jest przepisywany. Dokumentacja na `main` może być nowsza niż zawartość tagu; aktualną paczkę pobierz z [wydania](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0), a jej sumę ZIP sprawdź w [pliku SHA-256](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.2.0/SHA256SUMS-v0.2.0.txt).
