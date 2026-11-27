@@ -44,7 +44,7 @@ Dołączony klient działa w Windows PowerShell 5.1 i PowerShell 7; skrypty test
 - `protocol_version`: opcjonalne dla starszych klientów; jeśli go brakuje, żądanie jest traktowane jako wersja 1. Inna wersja powoduje błąd `protocol_version_unsupported`.
 - `expires_at_unix_ms`: zalecany bezwzględny termin w milisekundach Unix. Maksymalny akceptowany czas do wygaśnięcia wynosi 180 sekund. Starsze klienty mogą pominąć to pole; plugin użyje wtedy czasu modyfikacji pliku żądania i limitu wieku wynoszącego 120 sekund.
 
-Gdy termin wygaśnie, plugin zwraca `timeout`, o ile wcześniej nie zauważy znacznika anulowania. Klient może utworzyć `cancel.<id>`; plugin sprawdza go na bezpiecznych punktach kontrolnych, między innymi podczas skanowania wieloklatkowego. Jeśli znacznik i termin zostaną zauważone w tej samej kontroli, pierwszeństwo ma `cancelled`. Anulowanie nie przerywa natychmiast trwającego wywołania silnika. `camera_restore` nie reaguje na znacznik anulowania, ale żądanie musi nadal mieć poprawną kopertę i nieprzekroczony termin.
+Przy przyjmowaniu żądania plugin najpierw odrzuca przekroczony termin jako `timeout`. Po rozpoczęciu obsługi sprawdza anulowanie i termin na punktach kontrolnych; operacje sterowania bohaterem mają dodatkowe kody zakończenia opisane niżej. Klient może utworzyć `cancel.<id>`; plugin sprawdza go na bezpiecznych punktach kontrolnych, między innymi podczas skanowania wieloklatkowego. Jeśli znacznik i termin zostaną zauważone w tej samej kontroli, pierwszeństwo ma `cancelled`. Anulowanie nie przerywa natychmiast trwającego wywołania silnika. `camera_restore` nie reaguje na znacznik anulowania, ale żądanie musi nadal mieć poprawną kopertę i nieprzekroczony termin.
 
 Dołączony klient po osiągnięciu własnego limitu czasu zapisuje znacznik tylko wtedy, gdy `request.json` nadal zawiera jego `id`, a następnie czeka do trzech sekund na odpowiedź. Nie usuwa aktywnego żądania. Jeśli nie otrzyma potwierdzenia w tym czasie, kończy pracę z błędem i pozostawia stan plików do sprawdzenia; nie wysyłaj kolejnego żądania, dopóki poprzednie nie zostanie obsłużone lub ręcznie wyjaśnione.
 
@@ -66,7 +66,7 @@ Starsze pole tekstowe `error` jest zachowane. Klient powinien podejmować decyzj
 | protocol_version_unsupported | Żądana wersja protokołu nie jest obsługiwana; odpowiedź zawiera `supported_protocol_versions`. |
 | request_file_error | Plugin nie może odczytać czasu modyfikacji pliku dla starszego żądania bez `expires_at_unix_ms`. |
 | timeout | Termin żądania minął przed rozpoczęciem lub zakończeniem obsługi. |
-| cancelled | Plugin zauważył `cancel.<id>` na punkcie kontrolnym przed upływem terminu. |
+| cancelled | Plugin zauważył `cancel.<id>` na punkcie kontrolnym; przy tej kontroli anulowanie ma pierwszeństwo przed wygaśnięciem. |
 | world_not_ready | Świat gry lub wymagany parser nie jest dostępny. |
 | world_changed | Świat zmienił się podczas skanowania wieloklatkowego; częściowe wyniki odrzucono. |
 | capability_disabled | Komenda zmieniająca stan lub korzystająca z konfiguracji jest wyłączona albo nie została skonfigurowana. |
@@ -259,9 +259,9 @@ Plugin zapamiętuje ostatnią wysłaną parę nazwy i identyfikatora scenariusza
 
 Nie wymaga dodatkowych pól. Odczytuje skonfigurowane symbole całkowitoliczbowe Daedalusa. Odpowiedź zawiera obiekt `scenario_status` oraz jego płaskie aliasy zgodne z lokalnie skonfigurowanymi kluczami, dzięki czemu istniejące klienty testowe mogą zachować oczekiwane pola odpowiedzi.
 
-## Dodatkowe komendy diagnostyczne — kandydat v0.2.0
+## Komendy dodane w v0.2.0
 
-Ta sekcja opisuje lokalny, nieopublikowany kandydat. Nie jest to jeszcze publiczne wydanie. Protokół pozostaje w wersji 1; dotychczasowe komendy zachowują swoje formaty.
+Ta sekcja opisuje komendy publicznego wydania [v0.2.0 (Pre-release)](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0). Protokół pozostaje w wersji 1; dotychczasowe komendy zachowują swoje formaty.
 
 ### Wyszukiwanie VObów
 
@@ -417,7 +417,7 @@ Gdy `scenario_start` ma umieścić nowe żądanie w kolejce, plugin wyszukuje sk
 
 1. Wywołaj `ping` i sprawdź `protocol_version`, `world_ready` oraz `capabilities`.
 2. Do obserwacji używaj `vob`, `raycast`, `raycast_batch` lub `surface_grid`.
-3. Przed camera_set, scenario_start lub poleceniem player_* sprawdź, czy odpowiednia capability ma wartość true, oraz uzyskaj jawną zgodę użytkownika lub systemu wywołującego.
+3. Przed `camera_set`, `scenario_start`, `player_teleport`, `player_turn`, `player_move` lub `player_walk_to` sprawdź odpowiednią możliwość (`capabilities`) i uzyskaj jawną zgodę użytkownika lub systemu wywołującego. `player_state` i `player_collision` są komendami diagnostycznymi.
 4. Używaj unikalnego identyfikatora żądania, ustaw termin ważności i czekaj na odpowiedź z tym samym `id`.
 5. Po przekroczeniu limitu czasu przez klienta zapisz `cancel.<id>` i zaczekaj na odpowiedź potwierdzającą anulowanie przed wysłaniem kolejnego żądania.
 6. Po zmianie kamery wywołaj `camera_restore` i sprawdź wynik w polu `restored`.

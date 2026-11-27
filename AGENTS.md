@@ -84,3 +84,10 @@
 - Test actual walking in a controllable game world. A cutscene, scene without user input, or target equal to the starting position checks only request handling and input release; do not count it as a traversability test.
 - For long-running operations, check the deadline, cancellation, active-request cleanup, and ability to issue a subsequent ping. Always restore the testbed's default configuration.
 - Screenshots and game files stay in the local testbed. Do not add them, private fixtures, or local results to the repository or package.
+
+## Kontrola publikacji dokumentacji / Documentation publication checklist
+
+- Przed zatwierdzeniem wydania sprawdź oba README, API, changelogi i raporty testów: aktualne numery wersji, status wydania, odnośniki do paczek i zgodność przykładów z klientem oraz kodem. Zachowaj historyczne dane i rozróżnij wyniki poszczególnych kompilacji.
+- Przy publikacji usuń nieaktualne wzmianki o lokalnym kandydacie w dokumentacji bieżącego wydania. Po publikacji sprawdź publiczną gałąź i linki. Nie zmieniaj istniejących tagów lub paczek w ramach poprawek redakcyjnych.
+- Before release approval, check both README files, API references, changelogs and test reports for current versions, release status, download links and examples consistent with the client and source. Preserve historical data and distinguish results from different builds.
+- At publication, remove stale local-candidate statements for the current release. Verify the public branch and links afterward. Do not change existing tags or packages for editorial corrections.
