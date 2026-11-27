@@ -13,9 +13,16 @@
 - Movement commands supply input before the player's AI is processed and report the number of AI frames (`control_ai_frames`), so clients can distinguish request handling from actual movement.
 - Added a player-control regression script that finds a clear direction and checks actual movement and target arrival in a controllable world.
 - Kept protocol version 1 and existing v0.1.1 commands; the PowerShell client accepts the new command names.
-- Runtime checks in a running Gothic II 2.6 (fix) game with Union 1.0M covered communication, compatibility with established commands, new diagnostics, valid and invalid Daedalus symbol types, monitor cancellation, screenshots, and actual player_move and player_walk_to. Movement changed the player position, reached the target within tolerance, and released input.
-- A long-monitor cancellation test returned timeout, cleared the active request, and left ping operational. The TGA screenshot was checked and removed from the exchange directory.
-- Candidate Windows x86 DLL: SHA-256 89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5.
+- The final source review found that a configured int class variable has no instance context for GetValue/SetValue. Validation in scenario_start and scenario_status now rejects such symbols with configured_symbol_type_mismatch; the queue must still be writable.
+- Fixed horizontal heading normalization before SetHeadingAtWorld so a target vector does not distort the player's orientation.
+- Final Windows x86 DLL: SHA-256 B28E10A4441DA8DE7687C60AF2E99B27B1B7F3B0A8F21E063A737032216D4CC4. This file passed 11/11 runtime checks and 7/7 backward-compatibility checks.
+- On the final DLL, global float, string, and array symbols were read; a classvar was safely rejected as both queue and status; a valid global int worked as queue and status. player_turn changed the heading to [1,0,0] and restored the previous direction; player_teleport moved the hero 100 X units and returned to the starting position.
+- mover_inspect returned state for an existing zCMover; the monitor sampled Xardas and a mover over four samples. screenshot saved a valid 800×600×32 TGA image, which was visually checked and removed from the testbed.
+- vob_hierarchy returned a valid target but no ancestors or children in the tested world; a non-empty tree relationship was not confirmed.
+- The movement hook on the final DLL received input over 74 AI frames in a dialogue scene, but distance_moved was only 0.023 units; input was released. An earlier build moved the player in free gameplay, but that route was not repeated on the final SHA. player_walk_to passed its no-op and cleanup check, but actual target arrival on the final DLL remains unverified.
+- With the default configuration, ping reported player control disabled and player_move returned capability_disabled.
+- A long-monitor cancellation test returned timeout, cleared the active request, and left ping operational. Final-DLL performance in a 10-second intro-scene sample: idle 10.328 s CPU / 10.09 s wall time (102.39% of one core), 393.5 MiB RAM; during VOb scans, 7.516 s CPU / 10.19 s (73.73%), 15,706 nodes on average, 374 ms per request and 1,548 ms maximum, RAM 393.5→393.7 MiB. Other-process activity and PowerShell startup cost prevent this from isolating plugin overhead.
+- The candidate remains local. Real route traversal on the final DLL is not confirmed, so v0.2.0 is not yet ready for public release.
 - This remains a local candidate; no tag, publication, or deployment to GO3 or GO3 DEV was made.
 
 ## 0.1.1 — 2026-11-26 (verified pre-release package)

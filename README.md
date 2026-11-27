@@ -43,9 +43,9 @@ Kandydat dodaje:
 - screenshot bieżącej klatki renderera do pliku TGA w katalogu wymiany;
 - opcjonalne, domyślnie wyłączone polecenia player_teleport, player_turn, player_move i player_walk_to.
 
-Sterowanie postacią wymaga jawnego allow_player_control:true w lokalnej konfiguracji. Teleport nie jest ruchem. player_walk_to emuluje wejście do przodu i nie wyznacza ścieżki omijającej przeszkody. W zweryfikowanym teście runtime player_move przesunął postać o 258 jednostek w 1,5 s, a player_walk_to dotarł do celu w zadanym promieniu 40 jednostek. Obie komendy zwolniły wejście po zakończeniu. W scenach fabularnych, dialogach i miejscach z przeszkodą wynik może zawierać zerowy dystans; potwierdzeniem ruchu jest distance_moved, a nie samo reason:duration_elapsed.
+Sterowanie postacią wymaga jawnego allow_player_control:true w lokalnej konfiguracji. Teleport nie jest ruchem. player_walk_to ustawia kierunek i emuluje wejście do przodu; nie wyznacza ścieżki ani nie omija przeszkód. Wcześniejszy build kandydata przeszedł trasę w sterowalnym świecie, ale finalna DLL po poprawce normalizacji kierunku nie została ponownie sprawdzona podczas swobodnej rozgrywki. Na finalnej DLL w scenie dialogowej wejście dotarło do hooka przez 74 klatki AI, lecz dystans wyniósł tylko 0,023 jednostki. Traktuj rzeczywiste chodzenie jako eksperymentalne i nie uznawaj control_ai_frames ani reason:duration_elapsed za dowód ruchu; sprawdzaj distance_moved.
 
-Weryfikacja kandydata v0.2.0 objęła komunikację z grą, zgodność dotychczasowych komend, nowe odczyty diagnostyczne, poprawne i nieprawidłowe typy symboli Daedalusa, anulowanie długiego monitorowania, screenshot oraz rzeczywisty ruch gracza. Szczegółowe dane lokalnego testbedu i pliki gry pozostają poza publicznym repozytorium.
+Finalna lokalna DLL kandydata ma SHA-256 B28E10A4441DA8DE7687C60AF2E99B27B1B7F3B0A8F21E063A737032216D4CC4. Na tym pliku zaliczono 11/11 testów runtime i 7/7 testów zgodności wstecznej, a dodatkowo sprawdzono rzeczywistą zmianę orientacji i położenia, symbole Daedalusa, monitor NPC/movera oraz obraz TGA. W sprawdzonym świecie vob_hierarchy zwrócił poprawny cel, lecz puste listy przodków i dzieci. Pełny test przechodzenia trasy na tej samej DLL pozostaje niezaliczony, dlatego kandydat nie jest jeszcze gotowy do publicznego wydania. Szczegółowe dane lokalnego testbedu i pliki gry pozostają poza publicznym repozytorium.
 
 ### Przykłady dla Codexa, Claude Code i własnych skryptów
 
@@ -58,12 +58,22 @@ Codex, Claude Code oraz własny skrypt mogą wywołać tego samego klienta Power
 
 W poleceniu dla Codexa lub Claude Code poproś o sprawdzenie capabilities przez ping, odczytanie wyników JSON i wyraźne oddzielenie danych niedostępnych od wartości zerowych. Niech agent zaznaczy, że trasa WayNetu i raycasty nie potwierdzają możliwości przejścia postaci. Polecenia zmieniające stan wymagają osobnej, jawnej zgody oraz lokalnego włączenia w konfiguracji.
 
+### Eksport wyników do JSON i CSV
+
+Dołączony klient zapisuje pełną odpowiedź JSON przez parametr -SaveJsonPath. Parametr -ExportCsvPath tworzy spłaszczone wiersze CSV dla komend raycast_batch i surface_grid:
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    $gameRoot = 'C:\Games\Gothic II'
+    $payload = @{ default_flags = 1058; probes = @(@{ start = @(100, 1000, 200); direction = @(0, -1500, 0) }) } | ConvertTo-Json -Depth 4 -Compress
+    & $client -GameRoot $gameRoot -Command raycast_batch -PayloadJson $payload -SaveJsonPath '.\raycasts.json' -ExportCsvPath '.\raycasts.csv'
+
 ## Wymagania
 
 ### Korzystanie z gotowej biblioteki DLL
 
 - Windows 10 lub nowszy.
 - Gothic II: Noc Kruka w wersji x86 z kompatybilną instalacją Union.
+- Windows PowerShell 5.1 lub PowerShell 7, jeśli korzystasz z dołączonego klienta; skrypty testowe wymagają PowerShell 7 (pwsh).
 - Pobierz [gotową paczkę ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) lub sprawdź [opis wydania](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1).
 
 Do uruchomienia gotowej DLL nie są potrzebne Visual Studio, CMake, Ninja ani Git. Gothic II i Union muszą być już zainstalowane.

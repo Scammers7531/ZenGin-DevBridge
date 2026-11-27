@@ -90,6 +90,16 @@ float distanceBetween(const zVEC3& a, const zVEC3& b) {
     return std::sqrt(dx * dx + dy * dy + dz * dz);
 }
 
+bool unitHorizontalDirection(const zVEC3& direction, zVEC3& unit) {
+    const float lengthSquared = direction.n[0] * direction.n[0] +
+                                direction.n[2] * direction.n[2];
+    if (!std::isfinite(lengthSquared) || lengthSquared < 0.01f) return false;
+    const float length = std::sqrt(lengthSquared);
+    if (!std::isfinite(length) || length < 0.1f) return false;
+    unit = zVEC3(direction.n[0] / length, 0.0f, direction.n[2] / length);
+    return true;
+}
+
 json vobSummary(zCVob* vob) {
     if (!vob) return nullptr;
     const zVEC3 position = vobPosition(vob);
@@ -599,10 +609,11 @@ void beginPlayerControl(const json& request, const std::string& id, const char* 
         operation.stallLimitMs = static_cast<std::uint64_t>(boundedRequestInt(request, "stagnation_ms", 2500, 500, 10000));
         operation.lastDistance = distanceBetween(operation.startPosition, operation.targetPosition);
         checkRequestControl(id, requestState.deadlineMs);
-        if (operation.lastDistance > 1.0f) {
-            zVEC3 heading(operation.targetPosition.n[0] - operation.startPosition.n[0], 0.0f,
-                          operation.targetPosition.n[2] - operation.startPosition.n[2]);
-            player->SetHeadingAtWorld(heading);
+        zVEC3 unitHeading;
+        if (unitHorizontalDirection(
+                zVEC3(operation.targetPosition.n[0] - operation.startPosition.n[0], 0.0f,
+                      operation.targetPosition.n[2] - operation.startPosition.n[2]), unitHeading)) {
+            player->SetHeadingAtWorld(unitHeading);
         }
         operation.inputKey = GAME_UP;
     } else {
@@ -690,7 +701,8 @@ json playerTeleport(const json& request, zCWorld* world) {
     if (request.contains("look_at")) {
         const zVEC3 lookAt = readVec(request.at("look_at"));
         const zVEC3 heading(lookAt.n[0] - target.n[0], 0.0f, lookAt.n[2] - target.n[2]);
-        if (dotVec(heading, heading) > 0.01f) player->SetHeadingAtWorld(heading);
+        zVEC3 unitHeading;
+        if (unitHorizontalDirection(heading, unitHeading)) player->SetHeadingAtWorld(unitHeading);
     }
     const zVEC3 after = vobPosition(player);
     return json{{"ok", true}, {"before", vec(before)}, {"requested_position", vec(target)},
@@ -709,9 +721,11 @@ json playerTurn(const json& request, zCWorld* world) {
     const zVEC3 position = vobPosition(player);
     const zVEC3 lookAt = readVec(request.at("look_at"));
     const zVEC3 heading(lookAt.n[0] - position.n[0], 0.0f, lookAt.n[2] - position.n[2]);
-    if (dotVec(heading, heading) < 0.01f) fail("invalid_request", "look_at must differ horizontally from player position");
+    zVEC3 unitHeading;
+    if (!unitHorizontalDirection(heading, unitHeading))
+        fail("invalid_request", "look_at must differ horizontally from player position");
     checkRequestControl(requestState.id, requestState.deadlineMs);
-    player->SetHeadingAtWorld(heading);
+    player->SetHeadingAtWorld(unitHeading);
     return json{{"ok", true}, {"position", vec(position)}, {"look_at", vec(lookAt)},
         {"heading", vec(player->GetAtVectorWorld())}};
 }

@@ -43,9 +43,9 @@ The candidate adds:
 - screenshots of the current renderer frame saved as TGA in the exchange directory;
 - optional, disabled-by-default player_teleport, player_turn, player_move, and player_walk_to commands.
 
-Player control requires explicit allow_player_control:true in local configuration. Teleporting is not movement. player_walk_to emulates forward input and does not compute an obstacle-avoiding path. In a verified runtime test, player_move moved the character 258 units in 1.5 seconds, and player_walk_to reached its target within the configured 40-unit tolerance. Both commands released input when they finished. Story scenes, dialogue, or nearby obstacles can produce zero distance; distance_moved confirms movement, while reason:duration_elapsed only confirms that the requested time elapsed.
+Player control requires explicit allow_player_control:true in local configuration. Teleporting is not movement. player_walk_to sets a heading and emulates forward input; it does not compute a path or avoid obstacles. An earlier candidate build traversed a route in a controllable world, but the final DLL with the heading-normalization fix was not retested in free gameplay. On the final DLL in a dialogue scene, input reached the hook for 74 AI frames but distance moved was only 0.023 units. Treat actual walking as experimental. Neither control_ai_frames nor reason:duration_elapsed proves movement; check distance_moved.
 
-The v0.2.0 candidate verification covered game communication, compatibility with established commands, new diagnostic reads, valid and invalid Daedalus symbol types, long-monitor cancellation, screenshots, and actual player movement. Detailed local testbed data and game files remain outside the public repository.
+The final local candidate DLL has SHA-256 B28E10A4441DA8DE7687C60AF2E99B27B1B7F3B0A8F21E063A737032216D4CC4. On that file, 11/11 runtime checks and 7/7 backward-compatibility checks passed; additional checks confirmed real heading and position changes, Daedalus symbols, NPC/mover monitoring, and a valid TGA image. In the tested world, vob_hierarchy returned a valid target but empty ancestor and child lists. A real route-traversal test on this exact DLL remains incomplete, so the candidate is not yet ready for public release. Detailed local testbed data and game files remain outside the public repository.
 
 ### Examples for Codex, Claude Code, and custom scripts
 
@@ -58,12 +58,22 @@ Codex, Claude Code, and a custom script can call the same PowerShell client and 
 
 In a Codex or Claude Code instruction, ask the agent to check capabilities with ping, inspect the returned JSON, and distinguish unavailable data from zero values. It should state that a WayNet route and raycasts do not confirm that the character can traverse the world. State-changing commands require separate explicit authorization and local configuration opt-in.
 
+### Exporting results to JSON and CSV
+
+The included client saves the complete JSON response with -SaveJsonPath. -ExportCsvPath writes flattened CSV rows for raycast_batch and surface_grid:
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    $gameRoot = 'C:\Games\Gothic II'
+    $payload = @{ default_flags = 1058; probes = @(@{ start = @(100, 1000, 200); direction = @(0, -1500, 0) }) } | ConvertTo-Json -Depth 4 -Compress
+    & $client -GameRoot $gameRoot -Command raycast_batch -PayloadJson $payload -SaveJsonPath '.\raycasts.json' -ExportCsvPath '.\raycasts.csv'
+
 ## Requirements
 
 ### Using the ready-to-use DLL
 
 - Windows 10 or later.
 - Gothic II: Night of the Raven, x86, with a compatible Union installation.
+- Windows PowerShell 5.1 or PowerShell 7 when using the included client; the test scripts require PowerShell 7 (pwsh).
 - Download the [ready-to-use ZIP](https://github.com/Scammers7531/ZenGin-DevBridge/releases/download/v0.1.1/ZenGinDevBridge-0.1.1-win32.zip) or review the [release notes](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.1.1).
 
 Visual Studio, CMake, Ninja, and Git are not required to run the ready-to-use DLL. Gothic II and Union must already be installed.

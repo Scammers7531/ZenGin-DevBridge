@@ -13,9 +13,16 @@
 - Komendy ruchu podają wejście przed przetworzeniem AI gracza i raportują liczbę klatek AI (`control_ai_frames`), aby klient mógł odróżnić obsługę żądania od rzeczywistego ruchu.
 - Dodano skrypt regresyjny sterowania postacią, który wykrywa wolny kierunek i sprawdza rzeczywisty ruch oraz dojście do celu w sterowalnym świecie.
 - Zachowano protokół 1 i istniejące komendy v0.1.1; klient PowerShell akceptuje nowe nazwy komend.
-- W działającym Gothic II 2.6 (fix) z Union 1.0M sprawdzono komunikację, zgodność dotychczasowych komend, nowe diagnostyki, typy poprawnych i niepoprawnych symboli Daedalusa, anulowanie monitora, screenshot oraz rzeczywisty player_move i player_walk_to. Ruch zmienił pozycję postaci, osiągnął cel w zadanej tolerancji i zwolnił wejście.
-- Test anulowania długiego monitorowania zwrócił timeout, usunął aktywne żądanie i pozostawił działający ping. Wynik screenshotu w formacie TGA został sprawdzony i usunięty z katalogu wymiany.
-- Kandydacka biblioteka Windows x86: SHA-256 89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5.
+- Końcowy przegląd źródeł wykrył, że skonfigurowane int będące zmienną klasową nie mają kontekstu instancji wymaganego przez GetValue/SetValue. Weryfikacja scenario_start i scenario_status odrzuca teraz takie symbole jako configured_symbol_type_mismatch; kolejka nadal musi być zapisywalna.
+- Poprawiono normalizację poziomego kierunku przed SetHeadingAtWorld, aby wektor celu nie zniekształcał orientacji bohatera.
+- Finalna DLL Windows x86: SHA-256 B28E10A4441DA8DE7687C60AF2E99B27B1B7F3B0A8F21E063A737032216D4CC4. Na tym pliku zaliczono 11/11 testów runtime i 7/7 testów zgodności wstecznej.
+- Na finalnej DLL odczytano globalne symbole float, string i tablice, bezpiecznie odrzucono classvar jako symbol kolejki i statusu, a poprawny globalny int zadziałał jako kolejka i status. player_turn zmienił kierunek na [1,0,0] i przywrócił wcześniejszy; player_teleport przesunął bohatera o 100 jednostek X i wrócił do pozycji początkowej.
+- mover_inspect zwrócił stan istniejącego zCMover, a monitor próbkował Xardasa i mover w czterech próbkach. screenshot zapisał poprawny obraz TGA 800×600×32; plik został zweryfikowany wizualnie i usunięty z testbedu.
+- vob_hierarchy zwrócił prawidłowe dane celu, ale bez przodków i dzieci w testowanym świecie; nie potwierdzono niepustej relacji drzewa.
+- Hook ruchu na finalnej DLL otrzymał wejście przez 74 klatki AI w scenie dialogowej, lecz distance_moved wyniósł tylko 0,023 jednostki; wejście zostało zwolnione. Poprzedni build poruszył postać w swobodnej rozgrywce, ale ta trasa nie została powtórzona na finalnym SHA. player_walk_to przeszło test no-op i cleanup, lecz rzeczywiste dojście do celu na finalnej DLL pozostaje niezweryfikowane.
+- Przy domyślnej konfiguracji ping zgłosił sterowanie wyłączone, a player_move otrzymało capability_disabled.
+- Test anulowania długiego monitorowania zwrócił timeout, usunął aktywne żądanie i pozostawił działający ping. Pomiar wydajności finalnej DLL w 10-sekundowej scenie intro: bezczynnie 10,328 s CPU / 10,09 s czasu ściennego (102,39% jednego rdzenia), 393,5 MiB RAM; podczas skanów VObów 7,516 s CPU / 10,19 s (73,73%), średnio 15 706 węzłów, 374 ms na żądanie i szczyt 1 548 ms, RAM 393,5→393,7 MiB. Obciążenie innych procesów i koszt uruchamiania PowerShell uniemożliwiają wyciągnięcie z tego pomiaru izolowanego narzutu pluginu.
+- Kandydat pozostaje lokalny. Rzeczywiste przejście trasy na finalnej DLL nie zostało potwierdzone, dlatego v0.2.0 nie jest jeszcze gotowe do publicznego wydania.
 - Wydanie pozostaje lokalnym kandydatem; brak tagu, publikacji oraz wdrożenia do GO3 lub GO3 DEV.
 
 ## 0.1.1 — 2026-11-26 (wydanie przedpremierowe, pakiet zweryfikowany)

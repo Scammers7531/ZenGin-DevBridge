@@ -21,6 +21,15 @@ Wysyłaj jedno żądanie naraz. Plugin sprawdza identyfikator żądania przed u�
 
 `client.lock` koordynuje wyłącznie równoległe uruchomienia dołączonego klienta PowerShell. Klient usuwa plik tylko wtedy, gdy sam go utworzył i nadal zawiera on jego identyfikator. Plugin ani zewnętrzni klienci protokołu nie używają tej blokady, więc powinni samodzielnie serializować żądania. Jeśli klient zakończy się awaryjnie i pozostawi plik blokady, przed usunięciem go ręcznie upewnij się, że żaden klient DevBridge nie działa.
 
+### Klient PowerShell
+
+Dołączony klient działa w Windows PowerShell 5.1 i PowerShell 7; skrypty testowe wymagają PowerShell 7 (pwsh). Parametr -SaveJsonPath zapisuje całą odpowiedź JSON. Parametr -ExportCsvPath eksportuje wiersze results tylko dla raycast_batch i surface_grid.
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    $gameRoot = 'C:\Games\Gothic II'
+    $payload = @{ default_flags = 1058; probes = @(@{ start = @(100, 1000, 200); direction = @(0, -1500, 0) }) } | ConvertTo-Json -Depth 4 -Compress
+    & $client -GameRoot $gameRoot -Command raycast_batch -PayloadJson $payload -SaveJsonPath '.\raycasts.json' -ExportCsvPath '.\raycasts.csv'
+
 ## Koperta żądania
 
     {
@@ -173,6 +182,28 @@ Zwraca `found`; jeśli VOb został znaleziony, odpowiedź zawiera także `name`,
 
 `start` i `direction` to skończone wektory `[x,y,z]`, których składowe bezwzględne nie przekraczają 10 000 000. `flags` jest liczbą całkowitą z zakresu 0–32 767. Wynik zawiera informację `hit`, długość promienia, pozycję/wysokość/normalną trafienia, rodzaj geometrii oraz — jeśli są dostępne — dane materiału i VOba.
 
+Współrzędne są pozycjami świata Gothic w surowych jednostkach silnika; plugin nie przelicza ich na metry. Osie X i Z leżą poziomo, a Y jest osią pionową. direction jest wektorem przesunięcia, nie wektorem jednostkowym: koniec promienia to start + direction, a długość wynika z długości tego wektora. flags jest maską bitową przekazywaną do zCWorld::TraceRayNearestHit:
+
+| Wartość | Flaga |
+| ---: | --- |
+| 1 | zTRACERAY_VOB_IGNORE_NO_CD_DYN |
+| 2 | zTRACERAY_VOB_IGNORE |
+| 4 | zTRACERAY_VOB_BBOX |
+| 8 | zTRACERAY_VOB_OBB |
+| 16 | zTRACERAY_STAT_IGNORE |
+| 32 | zTRACERAY_STAT_POLY |
+| 64 | zTRACERAY_STAT_PORTALS |
+| 128 | zTRACERAY_POLY_NORMAL |
+| 256 | zTRACERAY_POLY_IGNORE_TRANSP |
+| 512 | zTRACERAY_POLY_TEST_WATER |
+| 1024 | zTRACERAY_POLY_2SIDED |
+| 2048 | zTRACERAY_VOB_IGNORE_CHARACTER |
+| 4096 | zTRACERAY_FIRSTHIT |
+| 8192 | zTRACERAY_VOB_TEST_HELPER_VISUALS |
+| 16384 | zTRACERAY_VOB_IGNORE_PROJECTILES |
+
+Wartość 1058 łączy zTRACERAY_VOB_IGNORE (2), zTRACERAY_STAT_POLY (32) i zTRACERAY_POLY_2SIDED (1024).
+
 ### raycast_batch
 
     {
@@ -240,6 +271,8 @@ Filtry opcjonalne: name_exact, name_contains i class_contains. Pozycję odniesie
 
 ### Hierarchia VOba
 
+Puste tablice ancestors i children oznaczają, że dla poprawnego węzła celu bieżący świat nie zwrócił relacji z przodkami lub dziećmi. Nie jest to błąd żądania ani dowód, że cały świat nie ma hierarchii.
+
     {"command":"vob_hierarchy","name":"PC_HERO","children_depth":3,"max_nodes":128}
 
 name wskazuje dokładny VOb. children_depth ma zakres 0–8 (domyślnie 2), max_nodes 1–256 (domyślnie 64). Odpowiedź zawiera target, ancestors, children, children_nodes_scanned i children_truncated. Liczba przodków jest ograniczona do 64.
@@ -276,6 +309,8 @@ waynet_route wykonuje ograniczony algorytm Dijkstry po krawędziach WayNetu. Uż
 
 ### Odczyt Daedalusa i inspekcja movera
 
+daedalus_read może odczytywać także stałe. Zmienne klasowe zwracają wyłącznie metadane z value_available:false, ponieważ klasa wymaga aktywnego kontekstu instancji. Odczyt tablic obejmuje tylko zakres wskazany przez start_index i count.
+
     {"command":"daedalus_search","name_contains":"TEST","limit":64,"offset":0,"scan_limit":20000}
 
 daedalus_search zwraca metadane symboli; limit 1–256, offset 0–100000, scan_limit 1–100000, filtr do 128 znaków. Skan jest ograniczony do 15 ms. daedalus_read wymaga symbol i opcjonalnie przyjmuje start_index 0–4095 oraz count 1–256. Odczyt obejmuje int, float i string, również tablice w żądanym zakresie. Ciągi są obcinane po 4096 bajtach. Typy nieobsługiwane oraz zmienne klasowe otrzymują value_available:false i value_reason. Plugin nie zapisuje dowolnych symboli Daedalusa.
@@ -285,6 +320,12 @@ daedalus_search zwraca metadane symboli; limit 1–256, offset 0–100000, scan_
 mover_inspect tylko odczytuje stan obiektu zCMover, parametry ruchu, pozycję i do 64 klatek kluczowych. related_target jest wyłącznie informacją o skonfigurowanym celu. trigger_invoked zawsze jest false; ta komenda nie uruchamia movera.
 
 ### Sterowanie bohaterem — opt-in
+
+Ruch jest realizowany przez hook oCAIHuman::DoAI, a nie przez bezpośrednie przesuwanie pozycji ani własną symulację fizyki. Hook wstrzykuje wejście wyłącznie dla AI aktualnego, żywego bohatera w tym samym świecie. Tuż przed oryginalnym DoAI ustawia wybrany klawisz, zwiększa control_ai_frames, wywołuje oryginalne AI dokładnie raz, a następnie przywraca stan klawisza z tej klatki. Przy rozpoczęciu operacji zapisywany jest wcześniejszy stan wejścia; przy jej zakończeniu plugin go odtwarza, usuwa aktywną operację i zwraca input_released:true.
+
+control_ai_frames potwierdza jedynie dotarcie wejścia do hooka. distance_moved to rzeczywista odległość euklidesowa 3D w surowych jednostkach świata Gothic. player_walk_to raz ustawia znormalizowany poziomy kierunek przez SetHeadingAtWorld, po czym emuluje wejście do przodu zwykłym przetwarzaniem AI. Nie używa pathfindingu, nie omija przeszkód i nie symuluje fizyki ani animacji.
+
+Na punktach kontrolnych hooka renderującego najpierw sprawdzane jest anulowanie, a potem termin całego żądania; gdy oba warunki są widoczne jednocześnie, pierwszeństwo ma cancelled. Upływ duration_ms komendy player_move zwraca duration_elapsed nawet przy zerowym dystansie. player_walk_to zwraca target_reached po wejściu w tolerancję, movement_stalled przy braku postępu lub movement_timeout po upływie czasu przed dojściem. Upływ terminu żądania podczas sterowania również kończy operację jako movement_timeout. Anulowanie, wygaśnięcie, zmiana świata, utrata bohatera i błędy kończą operację przez przywrócenie wejścia i wyczyszczenie aktywnego sterowania.
 
 Komendy player_teleport, player_turn, player_move i player_walk_to są domyślnie wyłączone. Wymagają allow_player_control:true w lokalnym pliku konfiguracji i potwierdzenia capabilities.mutating.player_control:true przez ping. Flaga player_control w capabilities.mutating jest zbiorczą informacją o dostępie, a nie nazwą komendy.
 
@@ -342,6 +383,8 @@ target_type to player, npc albo mover; npc i mover wymagają target z nazwą VOb
 | screenshot_save_failed | Nie udało się zapisać poprawnego, niepustego pliku TGA. |
 | screenshot_failed | Nieoczekiwany błąd screenshotu. |
 ## Konfiguracja lokalna
+
+Mapowanie scenario_dispatch.request_symbol musi wskazywać zapisywalną, skalarną globalną zmienną int. Każdy element status_symbols musi być skalarnym globalnym int; stała jest dopuszczalna dla odczytu statusu, lecz nie dla kolejki. Zmienne klasowe, tablice i typy inne niż int są odrzucane przed GetValue lub SetValue kodem configured_symbol_type_mismatch. Stała kolejka zwraca configured_symbol_not_writable. daedalus_read może odczytać stałe, ale nie odczytuje wartości zmiennych klasowych bez kontekstu instancji.
 
 Utwórz `<game-root>\ZenGinDevBridge.config.json` tylko wtedy, gdy potrzebujesz zmienić domyślny katalog wymiany lub włączyć komendę zmieniającą stan. Plik nie może przekraczać 16 KiB i obsługuje następujący format:
 

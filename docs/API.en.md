@@ -21,6 +21,15 @@ Send one request at a time. The plugin validates the request ID before using it 
 
 `client.lock` coordinates only concurrent runs of the bundled PowerShell client. A client removes the file only if it created it and the file still contains its own ID. The plugin and external protocol clients do not use this lock, so they must serialize their requests themselves. If a client crashes and leaves a lock file behind, verify that no DevBridge client is active before removing it manually.
 
+### PowerShell client
+
+The included client runs in Windows PowerShell 5.1 and PowerShell 7; the test scripts require PowerShell 7 (pwsh). -SaveJsonPath saves the full JSON response. -ExportCsvPath exports results rows only for raycast_batch and surface_grid.
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    $gameRoot = 'C:\Games\Gothic II'
+    $payload = @{ default_flags = 1058; probes = @(@{ start = @(100, 1000, 200); direction = @(0, -1500, 0) }) } | ConvertTo-Json -Depth 4 -Compress
+    & $client -GameRoot $gameRoot -Command raycast_batch -PayloadJson $payload -SaveJsonPath '.\raycasts.json' -ExportCsvPath '.\raycasts.csv'
+
 ## Request envelope
 
     {
@@ -173,6 +182,28 @@ Returns found; when found, also returns name, class, matrix, bbox3d_min, bbox3d_
 
 start and direction are finite [x,y,z] vectors with absolute components no larger than 10,000,000. flags is an integer from 0 to 32,767. The result has hit, ray length, hit position/height/normal, geometry kind, and material/VOb data when available.
 
+Coordinates are Gothic world positions in raw engine units; the plugin does not convert them to meters. X and Z are horizontal axes, and Y is vertical. direction is a displacement vector, not a unit vector: the ray endpoint is start + direction and its length is the vector's magnitude. flags is a bitmask passed to zCWorld::TraceRayNearestHit:
+
+| Value | Flag |
+| ---: | --- |
+| 1 | zTRACERAY_VOB_IGNORE_NO_CD_DYN |
+| 2 | zTRACERAY_VOB_IGNORE |
+| 4 | zTRACERAY_VOB_BBOX |
+| 8 | zTRACERAY_VOB_OBB |
+| 16 | zTRACERAY_STAT_IGNORE |
+| 32 | zTRACERAY_STAT_POLY |
+| 64 | zTRACERAY_STAT_PORTALS |
+| 128 | zTRACERAY_POLY_NORMAL |
+| 256 | zTRACERAY_POLY_IGNORE_TRANSP |
+| 512 | zTRACERAY_POLY_TEST_WATER |
+| 1024 | zTRACERAY_POLY_2SIDED |
+| 2048 | zTRACERAY_VOB_IGNORE_CHARACTER |
+| 4096 | zTRACERAY_FIRSTHIT |
+| 8192 | zTRACERAY_VOB_TEST_HELPER_VISUALS |
+| 16384 | zTRACERAY_VOB_IGNORE_PROJECTILES |
+
+The example value 1058 combines zTRACERAY_VOB_IGNORE (2), zTRACERAY_STAT_POLY (32), and zTRACERAY_POLY_2SIDED (1024).
+
 ### raycast_batch
 
     {
@@ -240,6 +271,8 @@ Optional filters are name_exact, name_contains, and class_contains. Set the refe
 
 ### VOb hierarchy
 
+Empty ancestors and children arrays mean that the current world returned no parent or child links for a valid target node. This is not a request error or proof that the entire world has no hierarchy.
+
     {"command":"vob_hierarchy","name":"PC_HERO","children_depth":3,"max_nodes":128}
 
 name identifies the exact VOb. children_depth is 0–8 (default 2), and max_nodes is 1–256 (default 64). The response contains target, ancestors, children, children_nodes_scanned, and children_truncated. The number of ancestors is capped at 64.
@@ -276,6 +309,8 @@ waynet_route runs bounded Dijkstra over WayNet edges. It uses a positive edge co
 
 ### Daedalus reads and mover inspection
 
+daedalus_read can also read constants. Class variables return metadata only with value_available:false because they require an active instance context. Array reads are limited to the range selected by start_index and count.
+
     {"command":"daedalus_search","name_contains":"TEST","limit":64,"offset":0,"scan_limit":20000}
 
 daedalus_search returns symbol metadata; limit is 1–256, offset 0–100000, scan_limit 1–100000, and the filter is limited to 128 characters. The scan is capped at 15 ms. daedalus_read requires symbol and optionally accepts start_index 0–4095 and count 1–256. Reads support int, float, and string, including arrays within the requested range. Strings are truncated after 4096 bytes. Unsupported types and class variables return value_available:false with value_reason. The plugin does not write arbitrary Daedalus symbols.
@@ -285,6 +320,12 @@ daedalus_search returns symbol metadata; limit is 1–256, offset 0–100000, sc
 mover_inspect only reads zCMover state, movement parameters, position, and up to 64 keyframes. related_target is informational only. trigger_invoked is always false; this command does not activate the mover.
 
 ### Player control — opt-in
+
+Movement uses an oCAIHuman::DoAI hook, not direct position changes or a custom physics simulation. The hook injects input only for the current living player's AI in the same world. Immediately before the original DoAI call, it sets the selected key, increments control_ai_frames, calls the original AI exactly once, and restores the key state that applied during that frame. The operation saves the previous input state when it begins; when it ends, the plugin restores that state, clears the active operation, and returns input_released:true.
+
+control_ai_frames only confirms that input reached the hook. distance_moved is the actual 3D Euclidean distance in raw Gothic world units. player_walk_to sets a normalized horizontal heading once with SetHeadingAtWorld, then emulates forward input through normal AI processing. It does not use pathfinding, avoid obstacles, or simulate physics or animation.
+
+At render-hook checkpoints, cancellation is checked before the overall request deadline; if both are observed together, cancelled takes precedence. Expiration of the player_move duration returns duration_elapsed even at zero distance. player_walk_to returns target_reached when within tolerance, movement_stalled when progress stops, or movement_timeout when its operation duration expires before arrival. Expiration of the overall request deadline during control also ends the operation as movement_timeout. Cancellation, expiration, world change, player loss, and errors restore input and clear the active control operation.
 
 player_teleport, player_turn, player_move, and player_walk_to are disabled by default. They require allow_player_control:true in local configuration and a ping result with capabilities.mutating.player_control:true. The player_control field in capabilities.mutating is an umbrella availability flag, not a command name.
 
@@ -342,6 +383,8 @@ target_type is player, npc, or mover; npc and mover require target with a VOb na
 | screenshot_save_failed | A valid, non-empty TGA could not be written. |
 | screenshot_failed | An unexpected screenshot error occurred. |
 ## Local configuration
+
+scenario_dispatch.request_symbol must map to a writable scalar global int variable. Each status_symbols entry must be a scalar global int; a constant is allowed for read-only status, but not for the queue. Class variables, arrays, and non-int types are rejected before GetValue or SetValue with configured_symbol_type_mismatch. A constant queue returns configured_symbol_not_writable. daedalus_read can read constants but cannot read class-variable values without an instance context.
 
 Create <game-root>\ZenGinDevBridge.config.json only when you need a non-default exchange folder or state-changing command. The file is limited to 16 KiB and supports:
 
