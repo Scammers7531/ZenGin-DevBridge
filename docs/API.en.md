@@ -44,7 +44,7 @@ The included client runs in Windows PowerShell 5.1 and PowerShell 7; the test sc
 - protocol_version: optional for older clients; if absent, the request is interpreted as version 1. Other versions receive protocol_version_unsupported.
 - expires_at_unix_ms: recommended absolute Unix time in milliseconds. The maximum accepted lifetime is 180 seconds. Older clients may omit it; for those requests, the plugin uses the request-file timestamp and a 120 second maximum age.
 
-When the deadline expires, the plugin returns `timeout` unless it observes a cancellation marker first. A client may create `cancel.<id>`; the plugin checks it at safe checkpoints, including between frames during multi-frame scans. If cancellation and expiry are observed in the same check, `cancelled` takes precedence. Cancellation does not interrupt an engine call already in progress. `camera_restore` ignores cancellation markers, but the request still needs a valid envelope and an unexpired deadline.
+At request admission, the plugin first rejects an expired deadline as `timeout`. After processing begins, it checks cancellation and expiry at checkpoints; player-control operations have additional completion codes described below. A client may create `cancel.<id>`; the plugin checks it at safe checkpoints, including between frames during multi-frame scans. If cancellation and expiry are observed in the same check, `cancelled` takes precedence. Cancellation does not interrupt an engine call already in progress. `camera_restore` ignores cancellation markers, but the request still needs a valid envelope and an unexpired deadline.
 
 After its own timeout, the bundled client writes a marker only if `request.json` still contains its ID, then waits up to three seconds for a response. It does not delete a pending request. If no acknowledgment arrives, it exits with an error and leaves the file state for inspection; do not send another request until the previous one has been processed or manually resolved.
 
@@ -66,7 +66,7 @@ The legacy error string is preserved. Clients should branch on error_code.
 | protocol_version_unsupported | The requested protocol version is unsupported; the response includes `supported_protocol_versions`. |
 | request_file_error | The plugin cannot read the request file timestamp for a legacy request without `expires_at_unix_ms`. |
 | timeout | The request deadline passed before processing started or completed. |
-| cancelled | The plugin observed `cancel.<id>` at a checkpoint before expiry. |
+| cancelled | The plugin observed `cancel.<id>` at a checkpoint; cancellation takes precedence over expiry in that check. |
 | world_not_ready | The game world or required parser is unavailable. |
 | world_changed | The world changed during a multi-frame scan; partial results were discarded. |
 | capability_disabled | A state-changing or configuration-backed command is disabled or unconfigured. |
@@ -259,9 +259,9 @@ The plugin remembers the last dispatched scenario name/ID pair in the current wo
 
 No additional fields. Reads configured Daedalus integer symbols. The response includes a scenario_status object plus flat aliases matching the locally configured keys, which lets existing environment-specific test clients keep their expected response fields.
 
-## Additional diagnostic commands — v0.2.0 candidate
+## Commands added in v0.2.0
 
-This section describes the local, unpublished candidate. It is not a public release yet. The protocol remains at version 1; existing commands keep their request formats.
+This section describes commands in the public [v0.2.0 pre-release](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0). The protocol remains at version 1; existing commands keep their request formats.
 
 ### VOb search
 
@@ -417,7 +417,7 @@ When `scenario_start` needs to enqueue a new request, the plugin resolves the co
 
 1. Call ping and inspect protocol_version, world_ready, and capabilities.
 2. Use vob, raycast, raycast_batch, or surface_grid for observation.
-3. Before camera_set, scenario_start, or a player_* command, check that the corresponding capability is true and obtain explicit authorization from the user or calling system.
+3. Before `camera_set`, `scenario_start`, `player_teleport`, `player_turn`, `player_move`, or `player_walk_to`, check the corresponding capability and obtain explicit authorization from the user or calling system. `player_state` and `player_collision` are diagnostic commands.
 4. Use a unique request ID, include an expiry, and wait for the response with that ID.
 5. On client timeout, write cancel.<id> and wait for the cancellation response before sending another request.
 6. After camera movement, call camera_restore and check its restored result.
