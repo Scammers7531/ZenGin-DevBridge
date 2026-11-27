@@ -2,7 +2,7 @@
 
 # Changelog
 
-## 0.2.0 — local candidate, 2026-11-27 (unpublished)
+## 0.2.0 — 2026-11-27 (pre-release)
 
 - Expanded the API with bounded VOb search and hierarchy, NPC diagnostics, and detailed player state and collision reads.
 - Added waypoint and local WayNet graph inspection, disconnected/dangling-link detection, and routes computed with bounded Dijkstra. A graph result explicitly does not confirm physical walkability.
@@ -23,8 +23,8 @@
 - A roughly 74.646-unit discrepancy between the end position in one movement response and a later player_state was checked in source: both commands read the same VOb world position and use the Euclidean norm. The extra vector is almost exactly parallel to the preceding movement and corresponds to about 0.30 seconds of walking at the measured speed. It is consistent with a later world-state read; the exact time gap and input state were not recorded, so a specific cause cannot be confirmed. No measurement bug was found.
 - With the default configuration, ping reported player control disabled and player_move returned capability_disabled.
 - A long-monitor cancellation test returned timeout, cleared the active request, and left ping operational. The only performance measurements with a complete local log used comparison DLL SHA-256 `89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5`, not final DLL B28. In a 15-second idle sample, Gothic used 15.406 s CPU / 15.025 s wall time (102.54% of one core) and memory changed from 392.5 to 393.5 MiB; without the plugin it used 15.031 s / 15.039 s (99.95%) and memory changed from 388.1 to 386.8 MiB. Across eight VOb scans, total elapsed time was 13.347 s, mean 1,662 ms per request, 97.51% of one core, and a mean of 16,816 nodes; request timing included launching a separate PowerShell client. These results do not isolate plugin overhead. No comparable performance measurement is available for DLL B28, so measurements from other runs are not attributed to the final file.
-- The final DLL B28 confirmed forward movement, target arrival, and stall detection; ordinary keyboard keys allowed lateral movement, while plugin strafing did not change X/Z. With the experimental limitation documented and the position-read discrepancy explained, the local candidate is ready for consideration as a Pre-release.
-- This remains a local candidate; no tag, publication, or deployment to GO3 or GO3 DEV was made.
+- The final DLL B28 confirmed forward movement, target arrival, and stall detection; ordinary keyboard keys allowed lateral movement, while plugin strafing did not change X/Z. Lateral control remains experimental; the cause of the additional displacement between position reads was not confirmed.
+- Published [v0.2.0 as a pre-release](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0). ZIP package (399,112 bytes), SHA-256 `4526FF587D4215DFF90CA50773C61BBF92B44D7F6341FF467DCA20E8B90BE05B`. Subsequent editorial corrections on main do not change the published package or tag.
 
 ## 0.1.1 — 2026-11-26 (verified pre-release package)
 
