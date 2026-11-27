@@ -2,7 +2,22 @@
 
 # Odizolowane środowisko testowe
 
-Data weryfikacji: 2026-11-26
+Daty weryfikacji: 2026-11-26–27
+
+## Weryfikacja wydania v0.2.0 (2026-11-27)
+
+Gothic II 2.6 (fix), x86, Union 1.0M, protokół 1. Finalna DLL Windows x86: SHA-256 `B28E10A4441DA8DE7687C60AF2E99B27B1B7F3B0A8F21E063A737032216D4CC4`.
+
+- 11/11 kontroli runtime i 7/7 kontroli zgodności wstecznej na finalnej DLL.
+- Potwierdzono ruch do przodu (178,11 jednostki / 713 ms), dojście do dwóch celów i zatrzymanie na stromym stoku; anulowanie oraz limit czasu zwalniały wejście. Nie potwierdzono ruchu bocznego przez plugin mimo działającego ręcznego sterowania.
+- Odczytano globalne symbole int, float, string i tablice; zmienne klasowe jako kolejka/status zostały odrzucone. Potwierdzono obrót, teleport, odczyt movera, próbkowanie NPC/movera i obraz TGA 800×600×32. Nie potwierdzono niepustej hierarchii VObów ani zmiany pozycji poruszającego się movera.
+- Test ruchu wymaga sterowalnego świata poza dialogami. `dialogue.active` może nie wykryć widocznego dialogu. Przyczyna dodatkowego przesunięcia 74,646 jednostki między odczytami nie została rozstrzygnięta.
+- Nie testowano zmiany świata podczas aktywnego ruchu ani konfliktów z innymi pluginami. Brak porównywalnego benchmarku finalnej DLL; dane pomiarowe wcześniejszej kompilacji opisano w [dzienniku zmian](../CHANGELOG.md).
+- Testbed i zapisy pozostają lokalne; po testach przywrócono konfigurację i zamknięto procesy testowe.
+
+Zobacz [publiczne wydanie v0.2.0](https://github.com/Scammers7531/ZenGin-DevBridge/releases/tag/v0.2.0).
+
+## Wyniki historyczne (v0.1.1 i v0.1.0)
 
 ## Weryfikacja kandydata 0.1.1
 
