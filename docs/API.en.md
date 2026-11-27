@@ -102,11 +102,13 @@ Every error code returned in `error_code` is also written to diagnostics. The fo
 
 ## Capabilities
 
-ping reports the plugin and protocol versions, whether a world is loaded, and capabilities. Capabilities separate read_only commands from mutating commands. A true value means the command is enabled/configured; a world or camera can still be unavailable at call time.
+ping returns plugin and protocol versions, world_ready, and capabilities. read_only lists observation commands; mutating reports whether state-changing operations are available. A true value means a capability is enabled or configured; it does not guarantee that the world, camera, or target is available when called. player_control in the mutating group is an umbrella flag, not a command.
+
+Example response with default configuration:
 
     {
       "plugin": "ZenGinDevBridge",
-      "plugin_version": "0.1.0",
+      "plugin_version": "0.2.0",
       "protocol_version": 1,
       "world_ready": true,
       "capabilities": {
@@ -117,13 +119,39 @@ ping reports the plugin and protocol versions, whether a world is loaded, and ca
           "raycast_batch": true,
           "surface_grid": true,
           "camera_get": true,
+          "vob_search": true,
+          "vob_hierarchy": true,
+          "npc_search": true,
+          "npc_inspect": true,
+          "player_state": true,
+          "player_collision": true,
+          "waypoint_search": true,
+          "waypoint_inspect": true,
+          "waynet_local_graph": true,
+          "waynet_nearest": true,
+          "waynet_check": true,
+          "waynet_route": true,
+          "daedalus_search": true,
+          "daedalus_read": true,
+          "mover_inspect": true,
+          "monitor": true,
+          "screenshot": true,
           "scenario_status": false
         },
         "mutating": {
           "camera_set": false,
           "scenario_start": false,
+          "player_teleport": false,
+          "player_turn": false,
+          "player_move": false,
+          "player_walk_to": false,
+          "player_control": false,
           "camera_restore": true
-        }
+        },
+        "config_valid": true,
+        "camera_control_enabled": false,
+        "player_control_enabled": false,
+        "scenario_dispatch_enabled": false
       }
     }
 
@@ -200,6 +228,119 @@ The plugin remembers the last dispatched scenario name/ID pair in the current wo
 
 No additional fields. Reads configured Daedalus integer symbols. The response includes a scenario_status object plus flat aliases matching the locally configured keys, which lets existing environment-specific test clients keep their expected response fields.
 
+## Additional diagnostic commands — v0.2.0 candidate
+
+This section describes the local, unpublished candidate. It is not a public release yet. The protocol remains at version 1; existing commands keep their request formats.
+
+### VOb search
+
+    {"command":"vob_search","name_contains":"CHEST","class_contains":"zCVob","center":[0,0,0],"radius":5000,"sort_by":"distance","limit":25,"offset":0,"scan_limit":20000}
+
+Optional filters are name_exact, name_contains, and class_contains. Set the reference point with center or center_vob, never both. radius (0–100000) requires a reference point; sort_by supports only distance. limit is 1–100, offset 0–100000, and scan_limit 1–200000. A single request has an internal 15 ms scan budget. The response contains results, nodes_scanned, total_vobs, scan_truncated, and scan_time_limited. offset pages matches from the current scan; the API does not provide a cursor to resume a scan interrupted by the time limit.
+
+### VOb hierarchy
+
+    {"command":"vob_hierarchy","name":"PC_HERO","children_depth":3,"max_nodes":128}
+
+name identifies the exact VOb. children_depth is 0–8 (default 2), and max_nodes is 1–256 (default 64). The response contains target, ancestors, children, children_nodes_scanned, and children_truncated. The number of ancestors is capped at 64.
+
+### NPC search and inspection
+
+    {"command":"npc_search","name_contains":"GUARD","instance_contains":"MIL","guild_contains":"GUARD","center_vob":"PC_HERO","radius":5000,"limit":25,"offset":0,"scan_limit":20000}
+
+npc_search filters by name_contains, instance_contains, and guild_contains. center or center_vob sorts results by distance; radius (0–100000) requires one of those fields. limit is 1–100, offset 0–100000, scan_limit 1–200000; filters are limited to 128 characters. A scan has a 15 ms time budget. Partial scans are reported through scan_truncated and scan_time_limited.
+
+    {"command":"npc_inspect","name":"NPC_VOB_NAME","inventory_limit":8}
+
+npc_inspect takes the VOb name of an NPC and inventory_limit 0–16 (default 8). It returns available information about its instance, position and orientation, health, life state, guild, AI, routine and current action, movement target, combat, waypoint, animation, dialogue, and inventory. Optional data is omitted or marked unavailable; the plugin does not infer it.
+
+### Player state and collision diagnostics
+
+player_state takes no additional fields. It returns the same information groups as npc_inspect for the player, the player flag, available oCAIPlayer data (movement, velocity, foot and head height, ground contact, falling, and sliding), collision_support, and a helper ground_probe.
+
+player_collision takes no additional fields. It returns character_support, four obstacle raycasts: forward and backward for 180 units, left and right for 140 units, plus available movement and collision state. full_character_simulation is false in the response: these are engine reads and probes, not a full collision simulation or proof that the character can traverse a route.
+
+### WayNet
+
+    {"command":"waypoint_search","name_contains":"WP","limit":64,"offset":0}
+
+waypoint_search accepts name_contains and/or exact name; limit is 1–256, offset is 0–100000. waypoint_inspect requires an exact name. Both responses describe the waypoint position and its available connections.
+
+    {"command":"waynet_nearest","position":[0,0,0]}
+
+Alternatively, waynet_nearest accepts a VOb name in vob. waynet_local_graph requires center (a waypoint name) and optionally accepts depth 0–8 (default 2) and max_nodes 1–256 (default 64). waynet_check accepts component_scan_limit 1–100000 (default 100000); it reports waypoint and edge counts, isolated points, dangling edges, and a sample of weakly connected components. Sample lists are bounded.
+
+    {"command":"waynet_route","start":"WP_START","target":"WP_END","max_nodes":20000}
+
+waynet_route runs bounded Dijkstra over WayNet edges. It uses a positive edge cost, or Euclidean distance between points when no cost is available. max_nodes is 1–100000. The response explicitly reports algorithm and physical_walkability_verified:false. A graph route is neither the AI's navigation result nor a guarantee that the character can traverse the world.
+
+### Daedalus reads and mover inspection
+
+    {"command":"daedalus_search","name_contains":"TEST","limit":64,"offset":0,"scan_limit":20000}
+
+daedalus_search returns symbol metadata; limit is 1–256, offset 0–100000, scan_limit 1–100000, and the filter is limited to 128 characters. The scan is capped at 15 ms. daedalus_read requires symbol and optionally accepts start_index 0–4095 and count 1–256. Reads support int, float, and string, including arrays within the requested range. Strings are truncated after 4096 bytes. Unsupported types and class variables return value_available:false with value_reason. The plugin does not write arbitrary Daedalus symbols.
+
+    {"command":"mover_inspect","name":"MOVER_VOB_NAME"}
+
+mover_inspect only reads zCMover state, movement parameters, position, and up to 64 keyframes. related_target is informational only. trigger_invoked is always false; this command does not activate the mover.
+
+### Player control — opt-in
+
+player_teleport, player_turn, player_move, and player_walk_to are disabled by default. They require allow_player_control:true in local configuration and a ping result with capabilities.mutating.player_control:true. The player_control field in capabilities.mutating is an umbrella availability flag, not a command name.
+
+    {"command":"player_teleport","waypoint":"WP_TARGET","look_at":[0,0,0]}
+
+player_teleport requires position or waypoint; look_at is optional. It returns the previous, requested, and actual positions. It uses SetPositionWorld; the engine revalidates collision on its next movement frame. Teleporting is not a walking test.
+
+    {"command":"player_turn","look_at":[100,0,200]}
+
+player_turn changes the player's horizontal heading. look_at must differ from the player's current position horizontally.
+
+    {"command":"player_move","direction":"forward","duration_ms":1000}
+
+player_move accepts direction: forward, backward, strafe_left, or strafe_right and duration_ms 100–30000 (default 1000). It injects the player's input immediately before that player's AI is processed, then restores the previous key state when it ends. The response includes start and end positions, distance_moved, elapsed_ms, input_released, world_matched, and control_ai_frames—the number of AI frames in which the plugin supplied input. In scripted scenes or when movement is blocked, the command may finish without moving the player; check distance_moved instead of assuming movement from the reason alone.
+
+    {"command":"player_walk_to","waypoint":"WP_TARGET","duration_ms":5000,"tolerance":100,"stagnation_ms":2500}
+
+player_walk_to requires target coordinates or a waypoint name. It accepts duration_ms 100–30000 (default 5000), tolerance 20–1000 (default 100), and stagnation_ms 500–10000 (default 2500). It sets the heading and emulates forward input for the duration of the operation. It does not compute obstacle-avoiding paths. The response includes positions, distance, target_distance, target_reached, a completion reason, input_released, and control_ai_frames. Lack of progress ends the operation with movement_stalled. On timeout, cancellation, world change, or player loss, the plugin releases the input.
+
+### Screenshot and monitoring
+
+screenshot takes no additional fields. After rendering the current frame it saves a 32-bit TGA in the exchange directory using a generated safe name, devbridge-<id>.tga. Existing files are not overwritten. The response returns filename, path, format, bytes, and capture_stage. The plugin supplies the image; the client is responsible for interpreting it.
+
+    {"command":"monitor","target_type":"player","duration_ms":5000,"interval_ms":250,"max_samples":20,"stagnation_ms":1000,"reference_vob":"NPC_VOB_NAME"}
+
+target_type is player, npc, or mover; npc and mover require target with a VOb name. Optional reference_vob adds reference_distance. duration_ms is 100–30000, interval_ms 50–5000, max_samples 1–256, and stagnation_ms 0–10000. The monitor returns position samples and, depending on the target, NPC, movement, or mover keyframe data. It ends on elapsed time, sample limit, or no-progress detection. The request remains subject to its deadline and cancel.<id> marker; timeout/cancellation returns an error and clears the active request. Only one monitor or player-control operation can run at a time.
+
+### Additional error codes
+
+| Error code | Meaning |
+| --- | --- |
+| vob_search_unavailable | VOb class metadata is unavailable. |
+| vob_not_found | The requested VOb or reference point was not found. |
+| vob_hierarchy_unavailable | The VOb tree node is unavailable or changed. |
+| npc_search_unavailable | NPC class metadata is unavailable. |
+| npc_not_found | The NPC was not found. |
+| object_not_npc | The requested VOb is not an NPC. |
+| player_unavailable | The player is unavailable, dead, or unconscious. |
+| waynet_unavailable | The current world's WayNet is unavailable. |
+| waypoint_not_found | The waypoint was not found. |
+| object_not_mover | The requested VOb is not a zCMover. |
+| input_unavailable | The game input system is unavailable for player control. |
+| operation_busy | Another monitoring or player-control operation is active. |
+| target_not_found | The monitored target disappeared. |
+| reference_not_found | The monitor reference object disappeared. |
+| player_changed | The active player object changed during monitoring. |
+| movement_stalled | The player's position made no required progress; input was released. |
+| movement_timeout | The walk attempt did not reach its target before its deadline. |
+| movement_failed | An unexpected movement error occurred; input was released. |
+| monitor_failed | An unexpected monitoring error occurred. |
+| renderer_unavailable | The renderer is unavailable for a screenshot. |
+| screenshot_directory_unavailable | The screenshot output directory could not be created. |
+| screenshot_exists | The generated screenshot path already exists; the file is not overwritten. |
+| screenshot_capture_failed | The frame buffer could not be copied or prepared. |
+| screenshot_save_failed | A valid, non-empty TGA could not be written. |
+| screenshot_failed | An unexpected screenshot error occurred. |
 ## Local configuration
 
 Create <game-root>\ZenGinDevBridge.config.json only when you need a non-default exchange folder or state-changing command. The file is limited to 16 KiB and supports:
@@ -209,6 +350,7 @@ Create <game-root>\ZenGinDevBridge.config.json only when you need a non-default 
       "exchange_directory": "ZenGinDevBridge",
       "allow_camera_control": false,
       "allow_scenario_start": false,
+      "allow_player_control": false,
       "scenario_dispatch": {
         "request_symbol": "BRIDGE_SCENARIO_REQUEST",
         "scenarios": {"example_step": 1},
@@ -226,7 +368,7 @@ When `scenario_start` needs to enqueue a new request, the plugin resolves the co
 
 1. Call ping and inspect protocol_version, world_ready, and capabilities.
 2. Use vob, raycast, raycast_batch, or surface_grid for observation.
-3. Before camera_set or scenario_start, verify its mutating capability is true and obtain explicit task-level authorization from the user or calling system.
+3. Before camera_set, scenario_start, or a player_* command, check that the corresponding capability is true and obtain explicit authorization from the user or calling system.
 4. Use a unique request ID, include an expiry, and wait for the response with that ID.
 5. On client timeout, write cancel.<id> and wait for the cancellation response before sending another request.
 6. After camera movement, call camera_restore and check its restored result.

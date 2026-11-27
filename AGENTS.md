@@ -68,3 +68,19 @@
 - Prefer a normal shutdown. Force-terminate only after checking the PID and path and after a normal shutdown has failed.
 - Check processes after each test stage, interruption, and failure. In the final report, confirm whether any process started by the agent remains active.
 - Keep a local progress log so work can resume; do not add private reports or testbed data to the public repository.
+
+## Weryfikacja sterowania i monitorowania / Control and monitoring verification
+
+- Komendy player_teleport, player_turn, player_move i player_walk_to są domyślnie wyłączone. Testuj je wyłącznie w izolowanym testbedzie po jawnym włączeniu allow_player_control.
+- Raportuj pozycję początkową i końcową, rzeczywisty distance_moved, reason oraz input_released. Zakończenie player_move albo player_walk_to bez błędu nie dowodzi, że postać przeszła trasę.
+- Test rzeczywistego chodzenia wykonuj w sterowalnym świecie gry. Test w przerywniku, scena bez wejścia użytkownika lub cel równy pozycji początkowej sprawdza wyłącznie obsługę żądania i zwalnianie wejścia; nie zaliczaj go jako testu przechodniości.
+- Dla operacji długotrwałych sprawdź limit czasu, anulowanie, wyczyszczenie aktywnego żądania i możliwość wykonania kolejnego ping. Zawsze przywróć domyślną konfigurację testbedu.
+- Screenshoty oraz pliki gry pozostają w lokalnym testbedzie. Nie dodawaj ich, prywatnych fixture ani lokalnych wyników do repozytorium lub paczki.
+
+## Control and monitoring verification
+
+- player_teleport, player_turn, player_move, and player_walk_to are disabled by default. Test them only in the isolated testbed after explicitly enabling allow_player_control.
+- Report starting and ending positions, actual distance_moved, reason, and input_released. A player_move or player_walk_to operation completing without an error does not prove that the character traversed a route.
+- Test actual walking in a controllable game world. A cutscene, scene without user input, or target equal to the starting position checks only request handling and input release; do not count it as a traversability test.
+- For long-running operations, check the deadline, cancellation, active-request cleanup, and ability to issue a subsequent ping. Always restore the testbed's default configuration.
+- Screenshots and game files stay in the local testbed. Do not add them, private fixtures, or local results to the repository or package.

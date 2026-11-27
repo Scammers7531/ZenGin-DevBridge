@@ -2,6 +2,22 @@
 
 # Changelog
 
+## 0.2.0 — local candidate, 2026-11-27 (unpublished)
+
+- Expanded the API with bounded VOb search and hierarchy, NPC diagnostics, and detailed player state and collision reads.
+- Added waypoint and local WayNet graph inspection, disconnected/dangling-link detection, and routes computed with bounded Dijkstra. A graph result explicitly does not confirm physical walkability.
+- Added Daedalus symbol search and bounded typed reads; the plugin does not write arbitrary variables.
+- Added zCMover state reads and bounded monitoring of the player, an NPC, or a mover, with time and sample limits, cancellation, and no-progress handling.
+- Added screenshots of the current renderer frame as TGA in the controlled exchange directory.
+- Added optional player_teleport, player_turn, player_move, and player_walk_to commands. They are disabled by default and restore the prior input state when an operation ends.
+- Movement commands supply input before the player's AI is processed and report the number of AI frames (`control_ai_frames`), so clients can distinguish request handling from actual movement.
+- Added a player-control regression script that finds a clear direction and checks actual movement and target arrival in a controllable world.
+- Kept protocol version 1 and existing v0.1.1 commands; the PowerShell client accepts the new command names.
+- Runtime checks in a running Gothic II 2.6 (fix) game with Union 1.0M covered communication, compatibility with established commands, new diagnostics, valid and invalid Daedalus symbol types, monitor cancellation, screenshots, and actual player_move and player_walk_to. Movement changed the player position, reached the target within tolerance, and released input.
+- A long-monitor cancellation test returned timeout, cleared the active request, and left ping operational. The TGA screenshot was checked and removed from the exchange directory.
+- Candidate Windows x86 DLL: SHA-256 89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5.
+- This remains a local candidate; no tag, publication, or deployment to GO3 or GO3 DEV was made.
+
 ## 0.1.1 — 2026-11-26 (verified pre-release package)
 
 - Split ready-to-use DLL requirements from source-build requirements; added a direct release link and practical plugin use cases.

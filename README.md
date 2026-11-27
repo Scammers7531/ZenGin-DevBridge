@@ -18,7 +18,7 @@ Wersja `0.1.1` jest wydaniem przedpremierowym zweryfikowanym w izolowanym testbe
 - Opcjonalne wysyłanie żądań i odczyt skonfigurowanych symboli całkowitoliczbowych Daedalusa. Obsługa scenariuszy jest domyślnie wyłączona i nie zawiera wbudowanych nazw scen.
 - Odczyt wersji protokołu i możliwości komend za pomocą `ping`.
 
-Domyślnie dostępne są komendy tylko do odczytu. `camera_set` i `scenario_start` zmieniają stan gry i wymagają lokalnego włączenia. `camera_restore` jest zawsze dostępne, aby usunąć nadpisanie kamery ustawione przez DevBridge.
+Domyślnie dostępne są komendy tylko do odczytu. Operacje camera_set, scenario_start, player_teleport, player_turn, player_move i player_walk_to zmieniają stan i wymagają lokalnego włączenia oraz sprawdzenia capabilities przez ping. camera_restore jest zawsze dostępne, aby usunąć nadpisanie kamery ustawione przez DevBridge.
 
 ## Praktyczne zastosowania
 
@@ -27,6 +27,36 @@ Domyślnie dostępne są komendy tylko do odczytu. `camera_set` i `scenario_star
 - Zapisz wyniki do JSON lub CSV i porównuj je między zmianami mapy albo konfiguracji moda.
 - Ustaw kamerę do powtarzalnego przeglądu sceny, jeśli lokalnie włączono sterowanie; po inspekcji przywróć pierwotne ustawienie przez `camera_restore`.
 - W testowej instalacji wyślij lokalnie skonfigurowany scenariusz i odczytaj skonfigurowane liczniki/statusy bez dodawania nazw scenariuszy do publicznego pluginu.
+
+## Lokalny kandydat v0.2.0
+
+Najnowszym publicznym wydaniem pozostaje v0.1.1. Rozszerzenia opisane poniżej są przygotowanym lokalnie kandydatem v0.2.0; nie są opublikowane i nie mają jeszcze publicznej paczki do pobrania.
+
+Kandydat dodaje:
+
+- limitowane wyszukiwanie VObów, hierarchię oraz wyszukiwanie i inspekcję NPC;
+- szczegółowy stan bohatera i odczyty kolizji, podłoża, spadania oraz przeszkód;
+- inspekcję waypointów, grafu WayNetu, jego spójności i tras obliczanych algorytmem Dijkstry;
+- wyszukiwanie metadanych i typowany odczyt wartości Daedalusa: int, float, string oraz ograniczonych zakresów tablic;
+- inspekcję stanu i klatek kluczowych zCMover; komenda nie uruchamia movera;
+- ograniczony czasowo monitor pozycji bohatera, NPC lub movera, z limitem próbek i wykrywaniem braku postępu;
+- screenshot bieżącej klatki renderera do pliku TGA w katalogu wymiany;
+- opcjonalne, domyślnie wyłączone polecenia player_teleport, player_turn, player_move i player_walk_to.
+
+Sterowanie postacią wymaga jawnego allow_player_control:true w lokalnej konfiguracji. Teleport nie jest ruchem. player_walk_to emuluje wejście do przodu i nie wyznacza ścieżki omijającej przeszkody. W zweryfikowanym teście runtime player_move przesunął postać o 258 jednostek w 1,5 s, a player_walk_to dotarł do celu w zadanym promieniu 40 jednostek. Obie komendy zwolniły wejście po zakończeniu. W scenach fabularnych, dialogach i miejscach z przeszkodą wynik może zawierać zerowy dystans; potwierdzeniem ruchu jest distance_moved, a nie samo reason:duration_elapsed.
+
+Weryfikacja kandydata v0.2.0 objęła komunikację z grą, zgodność dotychczasowych komend, nowe odczyty diagnostyczne, poprawne i nieprawidłowe typy symboli Daedalusa, anulowanie długiego monitorowania, screenshot oraz rzeczywisty ruch gracza. Szczegółowe dane lokalnego testbedu i pliki gry pozostają poza publicznym repozytorium.
+
+### Przykłady dla Codexa, Claude Code i własnych skryptów
+
+Codex, Claude Code oraz własny skrypt mogą wywołać tego samego klienta PowerShell i analizować jego JSON. Poniższe zapytania są tylko do odczytu:
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command vob_search -PayloadJson '{"class_contains":"zCMover","limit":20,"scan_limit":20000}'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command waypoint_search -PayloadJson '{"limit":64,"offset":0}'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command daedalus_read -PayloadJson '{"symbol":"TRUE","count":1}'
+
+W poleceniu dla Codexa lub Claude Code poproś o sprawdzenie capabilities przez ping, odczytanie wyników JSON i wyraźne oddzielenie danych niedostępnych od wartości zerowych. Niech agent zaznaczy, że trasa WayNetu i raycasty nie potwierdzają możliwości przejścia postaci. Polecenia zmieniające stan wymagają osobnej, jawnej zgody oraz lokalnego włączenia w konfiguracji.
 
 ## Wymagania
 
@@ -90,7 +120,8 @@ Umieść plik `ZenGinDevBridge.config.json` w katalogu głównym gry, obok folde
   "config_version": 1,
   "exchange_directory": "ZenGinDevBridge",
   "allow_camera_control": false,
-  "allow_scenario_start": false
+  "allow_scenario_start": false,
+  "allow_player_control": false
 }
 ```
 
@@ -134,7 +165,7 @@ Pełny format żądań, pola odpowiedzi, błędy i zabezpieczenia operacji zmien
 Codex, Claude Code oraz inni agenci programistyczni mogą uruchamiać dołączonego klienta PowerShell w swoim terminalu i analizować zwrócony JSON. Przykład polecenia dla agenta, które nie zmienia stanu gry:
 
 ```text
-Użyj klienta PowerShell ZenGin DevBridge. Najpierw wywołaj ping i sprawdź world_ready oraz capabilities. Następnie sprawdź PC_HERO komendą vob i zbadaj podłoże za pomocą surface_grid. Opisz wyniki JSON. Nie wywołuj camera_set ani scenario_start.
+Użyj klienta PowerShell ZenGin DevBridge. Najpierw wywołaj ping i sprawdź world_ready oraz capabilities. Następnie sprawdź PC_HERO komendą vob i zbadaj podłoże za pomocą surface_grid. Opisz wyniki JSON. Nie wywołuj camera_set, scenario_start ani player_*.
 ```
 
 Jeśli jawnie zezwolisz na zmianę kamery, poproś agenta o sprawdzenie, czy `camera_set` jest dostępne, wykonanie żądanej operacji i późniejsze wywołanie `camera_restore`. Wysłanie scenariusza wymaga osobnej, jawnej zgody oraz sprawdzonego lokalnego mapowania symbolu. Przewodnik API opisuje ten sam sposób pracy dla klientów wysyłających pliki JSON bezpośrednio.
@@ -156,7 +187,13 @@ pwsh -NoProfile -File .\tests\Invoke-MockProtocolTests.ps1
 pwsh -NoProfile -File .\tests\Invoke-ClientLockTests.ps1
 ```
 
-Test sprawdza plikowy przepływ klienta. Testy działania w silniku oraz krótki pomiar bezczynności wykonano również w odizolowanym środowisku testowym; zakres i ograniczenia opisuje [docs/TESTBED-STATUS.md](docs/TESTBED-STATUS.md). Wyniki mogą się różnić w zależności od instalacji Gothica, wersji Union i moda.
+Testy weryfikują plikowy przepływ klienta. Podsumowanie kontroli runtime znajduje się w dzienniku zmian; wyniki mogą się różnić w zależności od instalacji Gothica, wersji Union i moda.
+
+Test sterowania postacią uruchamiaj wyłącznie w izolowanym testbedzie z włączonym allow_player_control:true, po zakończeniu sceny fabularnej i na podłożu bez przeszkód w pobliżu. Zastąp `<testbed-path>` rzeczywistą ścieżką katalogu głównego testbedu. Skrypt sam wybiera kierunek z wolnym krótkim raycastem, sprawdza rzeczywisty ruch oraz dojście do celu:
+
+```powershell
+pwsh -NoProfile -File .\tests\Invoke-PlayerControlTests.ps1 -GameRoot '<testbed-path>'
+```
 
 ## Licencja
 

@@ -2,6 +2,22 @@
 
 # Dziennik zmian
 
+## 0.2.0 — kandydat lokalny, 2026-11-27 (nieopublikowany)
+
+- Rozszerzono API o limitowane wyszukiwanie i hierarchię VObów, diagnostykę NPC oraz szczegółowy stan bohatera i jego kolizji.
+- Dodano inspekcję waypointów, lokalnego grafu WayNetu, wykrywanie odizolowanych i niespójnych połączeń oraz trasę wyznaczaną ograniczonym algorytmem Dijkstry. Wynik grafowy jawnie nie potwierdza fizycznej przechodniości.
+- Dodano wyszukiwanie i typowany, ograniczony odczyt symboli Daedalusa; plugin nie zapisuje dowolnych zmiennych.
+- Dodano odczyt stanu zCMovera i ograniczone monitorowanie bohatera, NPC lub movera z limitem czasu, próbek, anulowaniem i obsługą braku postępu.
+- Dodano screenshot bieżącej klatki renderera do kontrolowanego katalogu wymiany w formacie TGA.
+- Dodano opcjonalne komendy player_teleport, player_turn, player_move i player_walk_to. Są domyślnie wyłączone i zawsze przywracają poprzedni stan wejścia po zakończeniu operacji.
+- Komendy ruchu podają wejście przed przetworzeniem AI gracza i raportują liczbę klatek AI (`control_ai_frames`), aby klient mógł odróżnić obsługę żądania od rzeczywistego ruchu.
+- Dodano skrypt regresyjny sterowania postacią, który wykrywa wolny kierunek i sprawdza rzeczywisty ruch oraz dojście do celu w sterowalnym świecie.
+- Zachowano protokół 1 i istniejące komendy v0.1.1; klient PowerShell akceptuje nowe nazwy komend.
+- W działającym Gothic II 2.6 (fix) z Union 1.0M sprawdzono komunikację, zgodność dotychczasowych komend, nowe diagnostyki, typy poprawnych i niepoprawnych symboli Daedalusa, anulowanie monitora, screenshot oraz rzeczywisty player_move i player_walk_to. Ruch zmienił pozycję postaci, osiągnął cel w zadanej tolerancji i zwolnił wejście.
+- Test anulowania długiego monitorowania zwrócił timeout, usunął aktywne żądanie i pozostawił działający ping. Wynik screenshotu w formacie TGA został sprawdzony i usunięty z katalogu wymiany.
+- Kandydacka biblioteka Windows x86: SHA-256 89B34B07E6A8F3813B7284D71F8B90FCA300DCA18AB9D0EE230CF8A5311D43F5.
+- Wydanie pozostaje lokalnym kandydatem; brak tagu, publikacji oraz wdrożenia do GO3 lub GO3 DEV.
+
 ## 0.1.1 — 2026-11-26 (wydanie przedpremierowe, pakiet zweryfikowany)
 
 - Rozdzielono wymagania uruchamiania gotowej DLL i kompilacji ze źródeł; dodano bezpośredni odnośnik do wydania oraz praktyczne zastosowania pluginu.

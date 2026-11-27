@@ -18,7 +18,7 @@ Version `0.1.1` is a pre-release verified in an isolated testbed running Gothic 
 - Optionally dispatch and read configured Daedalus integer symbols. Scenario dispatch is disabled by default and has no built-in scenario names.
 - Read protocol version and command capabilities with `ping`.
 
-Read-only commands are available by default. `camera_set` and `scenario_start` change game state and require local opt-in. `camera_restore` remains available to clear a DevBridge camera override.
+Read-only commands are available by default. camera_set, scenario_start, player_teleport, player_turn, player_move, and player_walk_to change game state and require local opt-in plus a capabilities check with ping. camera_restore remains available to clear a DevBridge camera override.
 
 ## Practical uses
 
@@ -27,6 +27,36 @@ Read-only commands are available by default. `camera_set` and `scenario_start` c
 - Save results as JSON or CSV and compare them across map or mod configuration changes.
 - Set the camera for a repeatable scene review when camera control is enabled locally, then restore the original setup with `camera_restore`.
 - In a test installation, dispatch a locally configured scenario and read configured counters/status values without adding scenario names to the public plugin.
+
+## Local v0.2.0 candidate
+
+The latest public release is still v0.1.1. The additions below are a locally prepared v0.2.0 candidate; they are not published and do not have a public download package yet.
+
+The candidate adds:
+
+- bounded VOb search, hierarchy inspection, and NPC search and inspection;
+- detailed player state and collision, support, falling, and obstacle reads;
+- waypoint inspection, WayNet graph and connectivity analysis, and routes computed with Dijkstra's algorithm;
+- Daedalus metadata search and typed reads of int, float, and string values, including bounded array ranges;
+- zCMover state and keyframe inspection; the command does not activate movers;
+- time-limited monitoring of the player, an NPC, or a mover, with a sample cap and no-progress detection;
+- screenshots of the current renderer frame saved as TGA in the exchange directory;
+- optional, disabled-by-default player_teleport, player_turn, player_move, and player_walk_to commands.
+
+Player control requires explicit allow_player_control:true in local configuration. Teleporting is not movement. player_walk_to emulates forward input and does not compute an obstacle-avoiding path. In a verified runtime test, player_move moved the character 258 units in 1.5 seconds, and player_walk_to reached its target within the configured 40-unit tolerance. Both commands released input when they finished. Story scenes, dialogue, or nearby obstacles can produce zero distance; distance_moved confirms movement, while reason:duration_elapsed only confirms that the requested time elapsed.
+
+The v0.2.0 candidate verification covered game communication, compatibility with established commands, new diagnostic reads, valid and invalid Daedalus symbol types, long-monitor cancellation, screenshots, and actual player movement. Detailed local testbed data and game files remain outside the public repository.
+
+### Examples for Codex, Claude Code, and custom scripts
+
+Codex, Claude Code, and a custom script can call the same PowerShell client and inspect its JSON. The following queries are read-only:
+
+    $client = '.\client\powershell\Query-DevBridge.ps1'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command vob_search -PayloadJson '{"class_contains":"zCMover","limit":20,"scan_limit":20000}'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command waypoint_search -PayloadJson '{"limit":64,"offset":0}'
+    & $client -GameRoot 'C:\Games\Gothic II' -Command daedalus_read -PayloadJson '{"symbol":"TRUE","count":1}'
+
+In a Codex or Claude Code instruction, ask the agent to check capabilities with ping, inspect the returned JSON, and distinguish unavailable data from zero values. It should state that a WayNet route and raycasts do not confirm that the character can traverse the world. State-changing commands require separate explicit authorization and local configuration opt-in.
 
 ## Requirements
 
@@ -90,7 +120,8 @@ Place `ZenGinDevBridge.config.json` in the game root, next to the `System` folde
   "config_version": 1,
   "exchange_directory": "ZenGinDevBridge",
   "allow_camera_control": false,
-  "allow_scenario_start": false
+  "allow_scenario_start": false,
+  "allow_player_control": false
 }
 ```
 
@@ -134,7 +165,7 @@ See [docs/API.en.md](docs/API.en.md) for the complete request format, response f
 Codex, Claude Code, or another coding agent can call the included PowerShell client from its terminal tool and parse the returned JSON. For example, ask the agent to inspect the current player and nearby floor without changing game state:
 
 ```text
-Use the ZenGin DevBridge PowerShell client. First call ping and check world_ready and capabilities. Then inspect PC_HERO with vob and sample the floor with surface_grid. Report the JSON findings. Do not call camera_set or scenario_start.
+Use the ZenGin DevBridge PowerShell client. First call ping and check world_ready and capabilities. Then inspect PC_HERO with vob and sample the floor with surface_grid. Report the JSON findings. Do not call camera_set, scenario_start, or player_*.
 ```
 
 When you explicitly authorize a camera change, have the agent check that `camera_set` is enabled, perform the requested action, and call `camera_restore` afterward. Scenario dispatch requires its own explicit authorization and a reviewed local symbol mapping. The API guide documents the same workflow for direct JSON-file clients.
@@ -156,7 +187,13 @@ pwsh -NoProfile -File .\tests\Invoke-MockProtocolTests.ps1
 pwsh -NoProfile -File .\tests\Invoke-ClientLockTests.ps1
 ```
 
-This verifies the client file workflow. Runtime smoke checks and a short idle comparison were also run in the isolated testbed; see [docs/TESTBED-STATUS.en.md](docs/TESTBED-STATUS.en.md) for scope and limits. Results can differ with another Gothic installation, Union build, or mod.
+This verifies the client file workflow. Run player-control checks only in an isolated testbed with allow_player_control:true, after scripted scenes have ended and with nearby ground clear of obstacles. Replace `<testbed-path>` with the testbed's actual game-root path. The script selects a direction with a clear short raycast, checks actual movement, and verifies walk-to completion:
+
+```powershell
+pwsh -NoProfile -File .\tests\Invoke-PlayerControlTests.ps1 -GameRoot '<testbed-path>'
+```
+
+Results can differ with another Gothic installation, Union build, or mod.
 
 ## License
 

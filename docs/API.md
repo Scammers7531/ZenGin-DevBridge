@@ -102,11 +102,13 @@ Każdy kod błędu zwrócony w `error_code` jest również zapisywany diagnostyc
 
 ## Możliwości
 
-`ping` zwraca wersje pluginu i protokołu, informację, czy świat jest załadowany, oraz zestaw możliwości. Możliwości rozdzielają komendy `read_only` od komend zmieniających stan. Wartość `true` oznacza, że komenda jest włączona lub skonfigurowana; świat albo kamera nadal mogą być niedostępne w chwili wywołania.
+ping zwraca wersje pluginu i protokołu, informację world_ready oraz capabilities. Pole read_only opisuje komendy obserwacyjne; mutating podaje dostępność operacji zmieniających stan. Wartość true oznacza, że możliwość jest włączona lub skonfigurowana, ale nie gwarantuje dostępności świata, kamery ani celu w chwili wywołania. player_control w grupie mutating jest flagą zbiorczą, a nie komendą.
+
+Przykładowa odpowiedź przy domyślnej konfiguracji:
 
     {
       "plugin": "ZenGinDevBridge",
-      "plugin_version": "0.1.0",
+      "plugin_version": "0.2.0",
       "protocol_version": 1,
       "world_ready": true,
       "capabilities": {
@@ -117,13 +119,39 @@ Każdy kod błędu zwrócony w `error_code` jest również zapisywany diagnostyc
           "raycast_batch": true,
           "surface_grid": true,
           "camera_get": true,
+          "vob_search": true,
+          "vob_hierarchy": true,
+          "npc_search": true,
+          "npc_inspect": true,
+          "player_state": true,
+          "player_collision": true,
+          "waypoint_search": true,
+          "waypoint_inspect": true,
+          "waynet_local_graph": true,
+          "waynet_nearest": true,
+          "waynet_check": true,
+          "waynet_route": true,
+          "daedalus_search": true,
+          "daedalus_read": true,
+          "mover_inspect": true,
+          "monitor": true,
+          "screenshot": true,
           "scenario_status": false
         },
         "mutating": {
           "camera_set": false,
           "scenario_start": false,
+          "player_teleport": false,
+          "player_turn": false,
+          "player_move": false,
+          "player_walk_to": false,
+          "player_control": false,
           "camera_restore": true
-        }
+        },
+        "config_valid": true,
+        "camera_control_enabled": false,
+        "player_control_enabled": false,
+        "scenario_dispatch_enabled": false
       }
     }
 
@@ -200,6 +228,119 @@ Plugin zapamiętuje ostatnią wysłaną parę nazwy i identyfikatora scenariusza
 
 Nie wymaga dodatkowych pól. Odczytuje skonfigurowane symbole całkowitoliczbowe Daedalusa. Odpowiedź zawiera obiekt `scenario_status` oraz jego płaskie aliasy zgodne z lokalnie skonfigurowanymi kluczami, dzięki czemu istniejące klienty testowe mogą zachować oczekiwane pola odpowiedzi.
 
+## Dodatkowe komendy diagnostyczne — kandydat v0.2.0
+
+Ta sekcja opisuje lokalny, nieopublikowany kandydat. Nie jest to jeszcze publiczne wydanie. Protokół pozostaje w wersji 1; dotychczasowe komendy zachowują swoje formaty.
+
+### Wyszukiwanie VObów
+
+    {"command":"vob_search","name_contains":"CHEST","class_contains":"zCVob","center":[0,0,0],"radius":5000,"sort_by":"distance","limit":25,"offset":0,"scan_limit":20000}
+
+Filtry opcjonalne: name_exact, name_contains i class_contains. Pozycję odniesienia podaj przez center albo center_vob, nigdy jednocześnie. radius (0–100000) wymaga punktu odniesienia; sort_by obsługuje tylko distance. limit ma zakres 1–100, offset 0–100000, a scan_limit 1–200000. Skan pojedynczego żądania ma wewnętrzny limit 15 ms. Wynik zawiera results, nodes_scanned, total_vobs, scan_truncated i scan_time_limited. offset stronicuje dopasowania z bieżącego skanu; API nie udostępnia kursora do wznowienia skanu przerwanego limitem czasu.
+
+### Hierarchia VOba
+
+    {"command":"vob_hierarchy","name":"PC_HERO","children_depth":3,"max_nodes":128}
+
+name wskazuje dokładny VOb. children_depth ma zakres 0–8 (domyślnie 2), max_nodes 1–256 (domyślnie 64). Odpowiedź zawiera target, ancestors, children, children_nodes_scanned i children_truncated. Liczba przodków jest ograniczona do 64.
+
+### Wyszukiwanie i inspekcja NPC
+
+    {"command":"npc_search","name_contains":"GUARD","instance_contains":"MIL","guild_contains":"GUARD","center_vob":"PC_HERO","radius":5000,"limit":25,"offset":0,"scan_limit":20000}
+
+npc_search filtruje po name_contains, instance_contains i guild_contains. center albo center_vob uruchamia sortowanie wyników według odległości; radius (0–100000) wymaga jednego z tych pól. limit 1–100, offset 0–100000, scan_limit 1–200000; filtr ma najwyżej 128 znaków. Skan ma limit czasu 15 ms. Odpowiedź sygnalizuje częściowy skan polami scan_truncated i scan_time_limited.
+
+    {"command":"npc_inspect","name":"NPC_VOB_NAME","inventory_limit":8}
+
+npc_inspect przyjmuje nazwę VOba NPC i inventory_limit 0–16 (domyślnie 8). Zwraca dostępne informacje o instancji, pozycji i orientacji, zdrowiu, stanie życia, gildii, AI, rutynie i bieżącej czynności, celu ruchu, walce, waypointcie, animacji, dialogu i ekwipunku. Informacje opcjonalne są pomijane albo oznaczane jako niedostępne; plugin nie wyprowadza ich z przypuszczeń.
+
+### Stan bohatera i diagnostyka kolizji
+
+player_state nie wymaga dodatkowych pól. Zwraca te same grupy informacji o bohaterze co npc_inspect, flagę player, dostępne parametry oCAIPlayer (ruch, prędkość, wysokość stóp i głowy, kontakt z podłożem, spadanie i poślizg), collision_support oraz pomocniczy ground_probe.
+
+player_collision nie wymaga dodatkowych pól. Zwraca odczyt character_support, cztery raycasty przeszkód: przód i tył po 180 jednostek, lewo i prawo po 140 jednostek, oraz dostępny stan ruchu i kolizji. W odpowiedzi full_character_simulation ma wartość false: są to odczyty silnika i sondy, a nie pełna symulacja kolizji ani dowód, że postać może przejść daną trasą.
+
+### WayNet
+
+    {"command":"waypoint_search","name_contains":"WP","limit":64,"offset":0}
+
+waypoint_search przyjmuje name_contains i/lub dokładne name; limit ma zakres 1–256, offset 0–100000. waypoint_inspect wymaga dokładnego name. Obie odpowiedzi opisują pozycję waypointa i jego dostępne połączenia.
+
+    {"command":"waynet_nearest","position":[0,0,0]}
+
+Alternatywnie waynet_nearest przyjmuje nazwę VOba w polu vob. waynet_local_graph wymaga center (nazwy waypointa), a opcjonalnie przyjmuje depth 0–8 (domyślnie 2) i max_nodes 1–256 (domyślnie 64). waynet_check przyjmuje component_scan_limit 1–100000 (domyślnie 100000); raportuje liczbę punktów i krawędzi, odizolowane punkty, krawędzie bez celu oraz próbkę słabo spójnych składowych. Listy próbek są ograniczone.
+
+    {"command":"waynet_route","start":"WP_START","target":"WP_END","max_nodes":20000}
+
+waynet_route wykonuje ograniczony algorytm Dijkstry po krawędziach WayNetu. Używa dodatniego kosztu krawędzi, a gdy go brak, odległości euklidesowej między punktami. max_nodes ma zakres 1–100000. Odpowiedź jawnie zwraca algorithm i physical_walkability_verified:false. Trasa grafowa nie jest wynikiem nawigacji AI ani gwarancją przejścia w świecie.
+
+### Odczyt Daedalusa i inspekcja movera
+
+    {"command":"daedalus_search","name_contains":"TEST","limit":64,"offset":0,"scan_limit":20000}
+
+daedalus_search zwraca metadane symboli; limit 1–256, offset 0–100000, scan_limit 1–100000, filtr do 128 znaków. Skan jest ograniczony do 15 ms. daedalus_read wymaga symbol i opcjonalnie przyjmuje start_index 0–4095 oraz count 1–256. Odczyt obejmuje int, float i string, również tablice w żądanym zakresie. Ciągi są obcinane po 4096 bajtach. Typy nieobsługiwane oraz zmienne klasowe otrzymują value_available:false i value_reason. Plugin nie zapisuje dowolnych symboli Daedalusa.
+
+    {"command":"mover_inspect","name":"MOVER_VOB_NAME"}
+
+mover_inspect tylko odczytuje stan obiektu zCMover, parametry ruchu, pozycję i do 64 klatek kluczowych. related_target jest wyłącznie informacją o skonfigurowanym celu. trigger_invoked zawsze jest false; ta komenda nie uruchamia movera.
+
+### Sterowanie bohaterem — opt-in
+
+Komendy player_teleport, player_turn, player_move i player_walk_to są domyślnie wyłączone. Wymagają allow_player_control:true w lokalnym pliku konfiguracji i potwierdzenia capabilities.mutating.player_control:true przez ping. Flaga player_control w capabilities.mutating jest zbiorczą informacją o dostępie, a nie nazwą komendy.
+
+    {"command":"player_teleport","waypoint":"WP_TARGET","look_at":[0,0,0]}
+
+player_teleport wymaga position albo waypoint; można dodać look_at. Zwraca pozycję przed, żądaną i rzeczywistą. Ustawienie pozycji używa SetPositionWorld; silnik ponownie sprawdza kolizję w następnym kroku ruchu. Teleport nie jest testem chodzenia.
+
+    {"command":"player_turn","look_at":[100,0,200]}
+
+player_turn zmienia poziomy kierunek bohatera. look_at musi różnić się poziomo od jego aktualnej pozycji.
+
+    {"command":"player_move","direction":"forward","duration_ms":1000}
+
+player_move przyjmuje direction: forward, backward, strafe_left albo strafe_right oraz duration_ms 100–30000 (domyślnie 1000). Wstrzykuje wejście gracza tuż przed przetworzeniem jego AI i po zakończeniu przywraca poprzedni stan klawisza. Odpowiedź podaje pozycję początkową i końcową, distance_moved, elapsed_ms, input_released, world_matched oraz control_ai_frames — liczbę klatek AI, w których plugin podał wejście. W scenie sterowanej skryptem lub przy blokadzie ruchu żądanie może zakończyć się bez przemieszczenia; sprawdzaj distance_moved zamiast zakładać ruch na podstawie reason.
+
+    {"command":"player_walk_to","waypoint":"WP_TARGET","duration_ms":5000,"tolerance":100,"stagnation_ms":2500}
+
+player_walk_to wymaga target jako wektora współrzędnych albo waypoint jako nazwy punktu. Przyjmuje duration_ms 100–30000 (domyślnie 5000), tolerance 20–1000 (domyślnie 100) i stagnation_ms 500–10000 (domyślnie 2500). Ustawia kierunek i przez czas operacji emuluje ruch do przodu. Nie wyznacza ścieżki omijającej przeszkody. Zwraca pozycje, dystans, target_distance, target_reached, przyczynę zakończenia, input_released i control_ai_frames. Zatrzymanie postępu kończy operację kodem movement_stalled. Przy przekroczeniu terminu, anulowaniu, zmianie świata albo utracie bohatera plugin zwalnia wejście.
+
+### Screenshot i monitorowanie
+
+screenshot nie wymaga dodatkowych pól. Po renderowaniu bieżącej klatki zapisuje plik TGA 32-bit w katalogu wymiany, pod generowaną, bezpieczną nazwą devbridge-<id>.tga. Nie nadpisuje istniejącego pliku. Odpowiedź zwraca filename, path, format, bytes i capture_stage. Plugin dostarcza obraz; jego interpretacja należy do klienta.
+
+    {"command":"monitor","target_type":"player","duration_ms":5000,"interval_ms":250,"max_samples":20,"stagnation_ms":1000,"reference_vob":"NPC_VOB_NAME"}
+
+target_type to player, npc albo mover; npc i mover wymagają target z nazwą VOba. Opcjonalny reference_vob dodaje reference_distance. duration_ms ma zakres 100–30000, interval_ms 50–5000, max_samples 1–256, a stagnation_ms 0–10000. Monitor zwraca próbki pozycji i zależnie od celu dane NPC, ruchu albo klatek movera. Kończy się po upływie czasu, limicie próbek albo wykryciu braku postępu. Żądanie nadal podlega deadline i plikowi cancel.<id>; po timeout/cancel operacja zwraca błąd i usuwa aktywne żądanie. Jednocześnie może działać tylko jedna operacja monitorowania lub sterowania bohaterem.
+
+### Dodatkowe kody błędów
+
+| Kod błędu | Znaczenie |
+| --- | --- |
+| vob_search_unavailable | Metadane klasy VOb nie są dostępne. |
+| vob_not_found | Nie znaleziono wskazanego VOba lub punktu odniesienia. |
+| vob_hierarchy_unavailable | Węzeł VOba w drzewie świata jest niedostępny albo uległ zmianie. |
+| npc_search_unavailable | Metadane klasy NPC nie są dostępne. |
+| npc_not_found | Nie znaleziono NPC. |
+| object_not_npc | Wskazany VOb nie jest NPC. |
+| player_unavailable | Bohater jest niedostępny, martwy albo nieświadomy. |
+| waynet_unavailable | WayNet bieżącego świata nie jest dostępny. |
+| waypoint_not_found | Nie znaleziono waypointa. |
+| object_not_mover | Wskazany VOb nie jest zCMover. |
+| input_unavailable | System wejścia gry nie jest dostępny dla sterowania bohaterem. |
+| operation_busy | Inna operacja monitorowania lub sterowania jest aktywna. |
+| target_not_found | Zniknął monitorowany cel. |
+| reference_not_found | Zniknął obiekt odniesienia monitora. |
+| player_changed | Aktywny obiekt bohatera zmienił się podczas monitorowania. |
+| movement_stalled | Pozycja bohatera nie zrobiła wymaganego postępu; wejście zostało zwolnione. |
+| movement_timeout | Próba dojścia nie dotarła do celu w wyznaczonym czasie. |
+| movement_failed | Nieoczekiwany błąd operacji ruchu; wejście zostało zwolnione. |
+| monitor_failed | Nieoczekiwany błąd monitorowania. |
+| renderer_unavailable | Renderer nie jest dostępny podczas screenshotu. |
+| screenshot_directory_unavailable | Nie można utworzyć katalogu wyjściowego screenshotu. |
+| screenshot_exists | Wygenerowana ścieżka screenshotu już istnieje; plik nie jest nadpisywany. |
+| screenshot_capture_failed | Nie udało się skopiować albo przygotować bufora klatki. |
+| screenshot_save_failed | Nie udało się zapisać poprawnego, niepustego pliku TGA. |
+| screenshot_failed | Nieoczekiwany błąd screenshotu. |
 ## Konfiguracja lokalna
 
 Utwórz `<game-root>\ZenGinDevBridge.config.json` tylko wtedy, gdy potrzebujesz zmienić domyślny katalog wymiany lub włączyć komendę zmieniającą stan. Plik nie może przekraczać 16 KiB i obsługuje następujący format:
@@ -209,6 +350,7 @@ Utwórz `<game-root>\ZenGinDevBridge.config.json` tylko wtedy, gdy potrzebujesz 
       "exchange_directory": "ZenGinDevBridge",
       "allow_camera_control": false,
       "allow_scenario_start": false,
+      "allow_player_control": false,
       "scenario_dispatch": {
         "request_symbol": "BRIDGE_SCENARIO_REQUEST",
         "scenarios": {"example_step": 1},
@@ -226,7 +368,7 @@ Gdy `scenario_start` ma umieścić nowe żądanie w kolejce, plugin wyszukuje sk
 
 1. Wywołaj `ping` i sprawdź `protocol_version`, `world_ready` oraz `capabilities`.
 2. Do obserwacji używaj `vob`, `raycast`, `raycast_batch` lub `surface_grid`.
-3. Przed `camera_set` lub `scenario_start` sprawdź, czy dana możliwość zmieniająca stan ma wartość `true`, oraz uzyskaj jawną zgodę użytkownika lub systemu wywołującego.
+3. Przed camera_set, scenario_start lub poleceniem player_* sprawdź, czy odpowiednia capability ma wartość true, oraz uzyskaj jawną zgodę użytkownika lub systemu wywołującego.
 4. Używaj unikalnego identyfikatora żądania, ustaw termin ważności i czekaj na odpowiedź z tym samym `id`.
 5. Po przekroczeniu limitu czasu przez klienta zapisz `cancel.<id>` i zaczekaj na odpowiedź potwierdzającą anulowanie przed wysłaniem kolejnego żądania.
 6. Po zmianie kamery wywołaj `camera_restore` i sprawdź wynik w polu `restored`.

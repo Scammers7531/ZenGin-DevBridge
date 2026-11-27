@@ -1,6 +1,6 @@
 [CmdletBinding()]
 param(
-    [Parameter(Mandatory=$true)][ValidateSet('ping','vob','raycast','raycast_batch','surface_grid','scenario_start','scenario_status','camera_get','camera_set','camera_restore')][string]$Command,
+    [Parameter(Mandatory=$true)][ValidateSet('ping','vob','raycast','raycast_batch','surface_grid','scenario_start','scenario_status','camera_get','camera_set','camera_restore','vob_search','vob_hierarchy','npc_search','npc_inspect','player_state','player_collision','waypoint_search','waypoint_inspect','waynet_nearest','waynet_local_graph','waynet_check','waynet_route','daedalus_search','daedalus_read','mover_inspect','player_teleport','player_turn','player_move','player_walk_to','screenshot','monitor')][string]$Command,
     [string]$Name,
     [double[]]$Start,
     [double[]]$Direction,

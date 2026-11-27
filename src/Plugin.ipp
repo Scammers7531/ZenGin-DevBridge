@@ -12,10 +12,22 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <limits>
+#include <memory>
+#include <queue>
 #include <stdexcept>
 #include <string>
 #include <system_error>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
+
+#ifdef min
+#undef min
+#endif
+#ifdef max
+#undef max
+#endif
 
 #ifndef DEVBRIDGE_VERSION
 #define DEVBRIDGE_VERSION "development"
@@ -39,6 +51,7 @@ struct BridgeSettings {
     bool configValid = true;
     bool allowCameraControl = false;
     bool allowScenarioStart = false;
+    bool allowPlayerControl = false;
     std::filesystem::path gameRoot;
     std::filesystem::path exchangeDir;
     std::string configError;
@@ -128,6 +141,7 @@ void loadBridgeSettings() {
 
         settings.allowCameraControl = config.value("allow_camera_control", false);
         settings.allowScenarioStart = config.value("allow_scenario_start", false);
+        settings.allowPlayerControl = config.value("allow_player_control", false);
         if (config.contains("scenario_dispatch")) {
             const auto& dispatch = config["scenario_dispatch"];
             if (!dispatch.is_object())
@@ -163,6 +177,7 @@ void loadBridgeSettings() {
         settings.configValid = false;
         settings.allowCameraControl = false;
         settings.allowScenarioStart = false;
+        settings.allowPlayerControl = false;
         settings.configError = error.what();
     }
 }
@@ -283,6 +298,10 @@ struct BridgeError : std::runtime_error {
     throw BridgeError(code, message);
 }
 
+[[noreturn]] void fail(const char* code, const std::string& message) {
+    throw BridgeError(code, message);
+}
+
 bool isIntegerScalarSymbol(const zCPar_Symbol* symbol) {
     return symbol != nullptr && symbol->type == zPAR_TYPE_INT && symbol->ele == 1;
 }
@@ -336,8 +355,8 @@ json rayResult(zCWorld* world, const zVEC3& start, const zVEC3& ray, int flags) 
     return result;
 }
 
-json characterSupport(const zVEC3& position) {
-    oCNpc* playerNpc = oCNpc::player;
+json characterSupport(const zVEC3& position, oCNpc* playerNpc = nullptr) {
+    if (!playerNpc) playerNpc = oCNpc::player;
     if (!playerNpc) return json{{"available",false},{"reason","player NPC unavailable"}};
     zCCollisionObject* collision = playerNpc->GetCollisionObject();
     if (!collision) return json{{"available",false},{"reason","player collision object unavailable"}};
@@ -704,23 +723,36 @@ json bridgeCapabilities() {
     const BridgeSettings& settings = bridgeSettings();
     json readOnly = {
         {"ping", true}, {"vob", true}, {"raycast", true}, {"raycast_batch", true},
-        {"surface_grid", true}, {"camera_get", true},
+        {"surface_grid", true}, {"camera_get", true}, {"vob_search", true},
+        {"vob_hierarchy", true}, {"npc_search", true}, {"npc_inspect", true},
+        {"player_state", true}, {"player_collision", true}, {"waypoint_search", true},
+        {"waypoint_inspect", true}, {"waynet_local_graph", true}, {"waynet_nearest", true},
+        {"waynet_check", true}, {"waynet_route", true}, {"daedalus_search", true},
+        {"daedalus_read", true}, {"mover_inspect", true}, {"monitor", true}, {"screenshot", true},
         {"scenario_status", settings.configValid && !settings.statusSymbols.empty()}
     };
     json mutating = {
         {"camera_set", settings.configValid && settings.allowCameraControl},
         {"scenario_start", settings.configValid && settings.allowScenarioStart &&
             !settings.scenarioRequestSymbol.empty() && !settings.scenarios.empty()},
+        {"player_teleport", settings.configValid && settings.allowPlayerControl},
+        {"player_turn", settings.configValid && settings.allowPlayerControl},
+        {"player_move", settings.configValid && settings.allowPlayerControl},
+        {"player_walk_to", settings.configValid && settings.allowPlayerControl},
+        {"player_control", settings.configValid && settings.allowPlayerControl},
         {"camera_restore", true}
     };
     json result = {{"read_only", readOnly}, {"mutating", mutating},
                    {"config_valid", settings.configValid},
                    {"camera_control_enabled", settings.configValid && settings.allowCameraControl},
+                   {"player_control_enabled", settings.configValid && settings.allowPlayerControl},
                    {"scenario_dispatch_enabled", settings.configValid && settings.allowScenarioStart &&
                        !settings.scenarioRequestSymbol.empty() && !settings.scenarios.empty()}};
     if (!settings.configValid) result["config_error"] = settings.configError;
     return result;
 }
+
+#include "Diagnostics.ipp"
 
 bool validRequestId(const std::string& id) {
     if (id.empty() || id.size() > 80 || id == "." || id == "..") return false;
@@ -849,6 +881,52 @@ void processRequest() {
                 result["world_ready"] = world != nullptr;
                 result["stage"] = 2;
                 result["capabilities"] = bridgeCapabilities();
+            } else if (command == "vob_search") {
+                result = vobSearch(request, world);
+            } else if (command == "vob_hierarchy") {
+                result = vobHierarchy(request, world);
+            } else if (command == "npc_search") {
+                result = npcSearch(request, world);
+            } else if (command == "npc_inspect") {
+                result = npcInspect(request, world);
+            } else if (command == "player_state") {
+                result = playerState(world);
+            } else if (command == "player_collision") {
+                result = playerCollision(world);
+            } else if (command == "waypoint_search") {
+                result = waypointSearch(request, world);
+            } else if (command == "waypoint_inspect") {
+                result = waypointInspect(request, world);
+            } else if (command == "waynet_local_graph") {
+                result = waynetLocalGraph(request, world);
+            } else if (command == "waynet_nearest") {
+                result = waynetNearest(request, world);
+            } else if (command == "waynet_check") {
+                result = waynetCheck(request, world);
+            } else if (command == "waynet_route") {
+                result = waynetRoute(request, world);
+            } else if (command == "daedalus_search") {
+                result = daedalusSearch(request);
+            } else if (command == "daedalus_read") {
+                result = daedalusRead(request);
+            } else if (command == "mover_inspect") {
+                result = moverInspect(request, world);
+            } else if (command == "player_teleport") {
+                result = playerTeleport(request, world);
+            } else if (command == "player_turn") {
+                result = playerTurn(request, world);
+            } else if (command == "player_move") {
+                beginPlayerControl(request, id, "player_move", world, false);
+                return;
+            } else if (command == "player_walk_to") {
+                beginPlayerControl(request, id, "player_walk_to", world, true);
+                return;
+            } else if (command == "screenshot") {
+                beginScreenshot(id);
+                return;
+            } else if (command == "monitor") {
+                beginMonitor(request, id, world);
+                return;
             } else if (command == "vob") {
                 if (!world) fail("world_not_ready", "no world is currently loaded");
                 const auto name = request.at("name").get<std::string>();
@@ -1098,10 +1176,14 @@ void __fastcall BridgeRenderBlit(oCGame* self, void* vtable) {
         observeWorldChange();
         if (pendingScan.active) {
             processPendingScan();
+        } else if (pendingPlayerControl.active) {
+            processPendingPlayerControl();
+        } else if (pendingMonitor.active) {
+            processPendingMonitor();
         } else {
             static DWORD lastPoll = 0;
             const DWORD now = GetTickCount();
-            if (static_cast<DWORD>(now - lastPoll) >= 200) {
+            if (!pendingScreenshot.active && static_cast<DWORD>(now - lastPoll) >= 200) {
                 lastPoll = now;
                 processRequest();
             }
@@ -1110,6 +1192,11 @@ void __fastcall BridgeRenderBlit(oCGame* self, void* vtable) {
         writeDiagnostic("render_hook_processing_error");
     }
     RenderBlitHook(self, vtable);
+    try {
+        capturePendingScreenshot();
+    } catch (...) {
+        writeDiagnostic("screenshot_hook_error");
+    }
 }
 }
 }
